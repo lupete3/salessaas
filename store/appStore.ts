@@ -75,6 +75,7 @@ export interface Expense {
 export interface DebtPayment {
   local_id: string;
   customer_uuid: string;
+  sale_uuid?: string; // Optional: link to a specific sale
   amount: number;
   payment_method: string;
   paid_at: string;
@@ -212,16 +213,47 @@ export const useAppStore = create<AppState>()(
         set({ debtPayments: [...synced, ...localStillUnsynced] });
       },
       addDebtPayment: (payment) => {
-        const { customers, debtPayments } = get();
+        const { customers, debtPayments, offlineQueue, syncedSales } = get();
+        
+        // 1. Update Customer Aggregate Debt
         const updatedCustomers = customers.map(c => {
            if (c.uuid === payment.customer_uuid || c.local_id === payment.customer_uuid) {
-             return { ...c, total_debt: Math.max(0, c.total_debt - payment.amount) };
+             return { ...c, total_debt: Math.max(0, parseFloat(String(c.total_debt)) - payment.amount) };
            }
            return c;
         });
+
+        // 2. Update Individual Sales
+        let remainingPayment = payment.amount;
+
+        const updateSale = (sale: LocalSale) => {
+          if (remainingPayment <= 0) return sale;
+
+          const isTargeted = payment.sale_uuid ? (sale.local_id === payment.sale_uuid) : true;
+          const isMatch = (sale.customer_uuid === payment.customer_uuid);
+          const hasDebt = sale.final_amount > (sale.amount_paid || 0);
+
+          if (isMatch && hasDebt && isTargeted) {
+             const currentDebt = sale.final_amount - (sale.amount_paid || 0);
+             const amountToApply = Math.min(remainingPayment, currentDebt);
+             
+             remainingPayment -= amountToApply;
+             return { 
+               ...sale, 
+               amount_paid: (sale.amount_paid || 0) + amountToApply 
+             };
+          }
+          return sale;
+        };
+
+        const updatedQueue = offlineQueue.map(updateSale);
+        const updatedSynced = syncedSales.map(updateSale);
+        
         set({ 
           debtPayments: [...debtPayments, payment],
-          customers: updatedCustomers
+          customers: updatedCustomers,
+          offlineQueue: updatedQueue,
+          syncedSales: updatedSynced
         });
       },
       markDebtPaymentsSynced: (localIds) => {

@@ -143,6 +143,7 @@ export const SyncService = {
         debt_payments: pendingDebtPayments.map(p => ({
             uuid: p.local_id,
             customer_uuid: p.customer_uuid,
+            sale_uuid: p.sale_uuid,
             amount: p.amount,
             payment_method: p.payment_method,
             paid_at: p.paid_at

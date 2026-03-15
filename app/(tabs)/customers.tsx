@@ -46,6 +46,15 @@ export default function CustomersScreen() {
     setNewName('');
     setNewPhone('');
   };
+   const [selectedSaleUuid, setSelectedSaleUuid] = useState<string | null>(null);
+
+  const customerSalesWithDebt = useMemo(() => {
+    if (!selectedCustomer) return [];
+    const uuid = selectedCustomer.uuid || selectedCustomer.local_id;
+    const allSales = [...useAppStore.getState().offlineQueue, ...useAppStore.getState().syncedSales];
+    return allSales.filter(s => s.customer_uuid === uuid && s.final_amount > (s.amount_paid || 0))
+                   .sort((a, b) => new Date(b.sold_at).getTime() - new Date(a.sold_at).getTime());
+  }, [selectedCustomer, customers]);
 
   const handlePayment = () => {
     const amount = parseFloat(paymentAmount);
@@ -54,8 +63,8 @@ export default function CustomersScreen() {
       return;
     }
 
-    if (amount > selectedCustomer.total_debt) {
-        Alert.alert('Attention', 'Le montant dépasse la dette actuelle. Voulez-vous continuer ?', [
+    if (amount > selectedCustomer.total_debt + 0.01) { // Add small epsilon for float precision
+        Alert.alert('Attention', 'Le montant dépasse la dette totale du client. Voulez-vous continuer ?', [
             { text: 'Annuler', style: 'cancel' },
             { text: 'Continuer', onPress: () => confirmPayment(amount) }
         ]);
@@ -68,6 +77,7 @@ export default function CustomersScreen() {
     addDebtPayment({
         local_id: `loc_pay_${Date.now()}`,
         customer_uuid: selectedCustomer?.uuid || selectedCustomer?.local_id || '',
+        sale_uuid: selectedSaleUuid || undefined,
         amount: amount,
         payment_method: 'cash',
         paid_at: new Date().toISOString(),
@@ -75,6 +85,7 @@ export default function CustomersScreen() {
     });
     setSelectedCustomer(null);
     setPaymentAmount('');
+    setSelectedSaleUuid(null);
     Alert.alert('Succès', 'Paiement enregistré.');
   };
 
@@ -153,17 +164,55 @@ export default function CustomersScreen() {
 
       {/* Payment Form (Overlay-like) */}
       {selectedCustomer && (
-          <View style={[styles.addForm, { position: 'absolute', top: 100, left: 12, right: 12, zIndex: 10, elevation: 5, shadowColor: '#000', shadowOffset: { width:0, height:4}, shadowOpacity: 0.5, shadowRadius: 10 }]}>
-            <View style={{flexDirection:'row', justifyContent:'space-between', marginBottom: 15}}>
-                <Text style={styles.formTitle}>Paiement Dette: {selectedCustomer.name}</Text>
-                <TouchableOpacity onPress={() => setSelectedCustomer(null)}>
+          <View style={[styles.addForm, { position: 'absolute', top: 50, left: 12, right: 12, zIndex: 10, elevation: 5, shadowColor: '#000', shadowOffset: { width:0, height:4}, shadowOpacity: 0.5, shadowRadius: 10 }]}>
+            <View style={{flexDirection:'row', justifyContent:'space-between', marginBottom: 10}}>
+                <Text style={styles.formTitle}>Paiement: {selectedCustomer.name}</Text>
+                <TouchableOpacity onPress={() => { setSelectedCustomer(null); setSelectedSaleUuid(null); }}>
                     <Ionicons name="close" size={24} color="#888" />
                 </TouchableOpacity>
             </View>
-            <Text style={{color: '#888', marginBottom: 10}}>Dette actuelle: {selectedCustomer.total_debt.toFixed(2)} {currency}</Text>
+            
+            <Text style={{color: '#888', marginBottom: 12}}>
+                Dette totale: <Text style={{color:'#e74c3c', fontWeight:'bold'}}>{selectedCustomer.total_debt.toFixed(2)} {currency}</Text>
+            </Text>
+
+            {customerSalesWithDebt.length > 0 && (
+                <View style={{maxHeight: 180, marginBottom: 15}}>
+                    <Text style={{color:'#fff', fontSize: 13, marginBottom: 8}}>Choisir une vente spécifique (Optionnel) :</Text>
+                    <FlatList 
+                        data={customerSalesWithDebt}
+                        keyExtractor={s => s.local_id}
+                        renderItem={({item}) => (
+                           <TouchableOpacity 
+                             style={[
+                                styles.saleOption, 
+                                selectedSaleUuid === item.local_id && styles.saleOptionSelected
+                             ]}
+                             onPress={() => setSelectedSaleUuid(selectedSaleUuid === item.local_id ? null : item.local_id)}
+                           >
+                                <View style={{flex:1}}>
+                                    <Text style={{color:'#fff', fontSize:12}}>Vente du {new Date(item.sold_at).toLocaleDateString()}</Text>
+                                    <Text style={{color:'#888', fontSize:10}}>{item.local_id.substring(0,8)}...</Text>
+                                </View>
+                                <View style={{alignItems:'flex-end'}}>
+                                    <Text style={{color:'#e74c3c', fontSize:12, fontWeight:'bold'}}>{(item.final_amount - (item.amount_paid || 0)).toFixed(2)} {currency}</Text>
+                                    <Text style={{color:'#666', fontSize:10}}>Total: {item.final_amount} </Text>
+                                </View>
+                           </TouchableOpacity>
+                        )}
+                        nestedScrollEnabled
+                    />
+                    {!selectedSaleUuid && (
+                        <Text style={{color: '#aaa', fontSize: 10, fontStyle:'italic', marginTop: 4}}>
+                            * Aucun choix = Paiement réparti (plus anciennes en premier)
+                        </Text>
+                    )}
+                </View>
+            )}
+
             <TextInput
                 style={styles.input}
-                placeholder="Montant du paiement *"
+                placeholder="Montant à payer *"
                 placeholderTextColor="#888"
                 value={paymentAmount}
                 onChangeText={setPaymentAmount}
@@ -171,7 +220,9 @@ export default function CustomersScreen() {
                 autoFocus
             />
             <TouchableOpacity style={styles.paySubmitBtn} onPress={handlePayment}>
-                <Text style={styles.submitText}>Enregistrer le paiement</Text>
+                <Text style={styles.submitText}>
+                   {selectedSaleUuid ? 'Payer cette vente' : 'Enregistrer (Global)'}
+                </Text>
             </TouchableOpacity>
           </View>
       )}
@@ -240,4 +291,17 @@ const styles = StyleSheet.create({
   },
   payBtnText: { color: '#fff', fontSize: 11, fontWeight: 'bold' },
   empty: { color: '#666', textAlign: 'center', marginTop: 60, fontSize: 15 },
+  saleOption: {
+    flexDirection: 'row',
+    backgroundColor: 'rgba(255,255,255,0.03)',
+    padding: 10,
+    borderRadius: 8,
+    marginBottom: 6,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.05)',
+  },
+  saleOptionSelected: {
+    borderColor: '#3498db',
+    backgroundColor: 'rgba(52, 152, 219, 0.1)',
+  },
 });
