@@ -35,6 +35,10 @@ class ApiController extends Controller
             return response()->json(['message' => 'Compte désactivé.'], 403);
         }
 
+        if ($user->store && !$user->store->isActive() && !$user->isSuperAdmin()) {
+            return response()->json(['message' => 'L\'entreprise est inactive ou l\'abonnement a expiré.'], 403);
+        }
+
         $token = $user->createToken('mobile-app')->plainTextToken;
 
         return response()->json([

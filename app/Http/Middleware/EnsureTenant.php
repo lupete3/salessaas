@@ -20,7 +20,19 @@ class EnsureTenant
         $user = $request->user();
 
         if (!$user) {
+            if ($request->expectsJson() || $request->is('api/*')) {
+                return response()->json(['message' => __('auth.no_store')], 403);
+            }
             abort(403, __('auth.no_store'));
+        }
+
+        if (!$user->is_active) {
+            if ($request->expectsJson() || $request->is('api/*')) {
+                return response()->json(['message' => __('auth.account_disabled')], 403);
+            }
+            Auth::logout();
+            return redirect()->route('login')
+                ->with('error', __('auth.account_disabled'));
         }
 
         if ($user->isSuperAdmin()) {
@@ -31,19 +43,19 @@ class EnsureTenant
         }
 
         if (!$user->store_id) {
+            if ($request->expectsJson() || $request->is('api/*')) {
+                return response()->json(['message' => __('auth.no_store')], 403);
+            }
             abort(403, __('auth.no_store'));
-        }
-
-        if (!$user->is_active) {
-            Auth::logout();
-            return redirect()->route('login')
-                ->with('error', __('auth.account_disabled'));
         }
 
         // Charger le magasin en mémoire (évite les N+1)
         $store = $user->load('store')->store;
 
-        if (!$store || $store->subscription_status === 'expired') {
+        if (!$store || !$store->isActive()) {
+            if ($request->expectsJson() || $request->is('api/*')) {
+                return response()->json(['message' => 'Votre abonnement est inactif ou expiré.'], 403);
+            }
             return redirect()->route('subscription.expired');
         }
 
