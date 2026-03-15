@@ -10,6 +10,7 @@ class DebtPayment extends Model
         'store_id',
         'user_id',
         'customer_id',
+        'sale_id',
         'uuid',
         'amount',
         'payment_method',
@@ -34,5 +35,10 @@ class DebtPayment extends Model
     public function customer()
     {
         return $this->belongsTo(Customer::class);
+    }
+
+    public function sale()
+    {
+        return $this->belongsTo(Sale::class);
     }
 }

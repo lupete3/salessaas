@@ -243,15 +243,32 @@ class ApiController extends Controller
                 if (!$customerId)
                     continue;
 
-                DebtPayment::create([
+                $saleId = null;
+                if (!empty($pData['sale_uuid'])) {
+                    $saleId = Sale::where('uuid', $pData['sale_uuid'])->value('id');
+                }
+
+                $payment = DebtPayment::create([
                     'store_id' => $user->store_id,
                     'user_id' => $user->id,
                     'customer_id' => $customerId,
+                    'sale_id' => $saleId,
                     'uuid' => $pData['uuid'],
                     'amount' => $pData['amount'],
                     'payment_method' => $pData['payment_method'],
                     'paid_at' => $pData['paid_at'] ? date('Y-m-d H:i:s', strtotime($pData['paid_at'])) : now(),
                 ]);
+
+                // Update sale if linked
+                if ($saleId) {
+                    $sale = Sale::find($saleId);
+                    if ($sale) {
+                        $sale->increment('amount_paid', $pData['amount']);
+                    }
+                } else {
+                    // Global payment (FIFO) - Optional: we could implement FIFO on backend too 
+                    // but for now, the aggregate debt calculation on Customer model handles it.
+                }
             }
         }
 
