@@ -70,6 +70,9 @@ export const SyncService = {
     try {
       const pRes = await apiClient().get('/products');
       useAppStore.getState().setProducts(pRes.data.products);
+      if (pRes.data.store) {
+        useAuthStore.getState().setStoreInfo(pRes.data.store);
+      }
       
       const cRes = await apiClient().get('/customers');
       useAppStore.getState().setCustomers(cRes.data.customers);
