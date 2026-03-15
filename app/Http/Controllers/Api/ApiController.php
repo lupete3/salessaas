@@ -52,7 +52,7 @@ class ApiController extends Controller
                 'address' => $user->store->address,
                 'phone' => $user->store->phone,
                 'email' => $user->store->email,
-                'logo' => $user->store->logo,
+                'logo' => $user->store->logo ? asset('storage/' . $user->store->logo) : null,
                 'license_number' => $user->store->license_number,
             ] : null,
         ]);
@@ -86,7 +86,19 @@ class ApiController extends Controller
                 ];
             });
 
-        return response()->json(['products' => $products]);
+        return response()->json([
+            'products' => $products,
+            'store' => $user->store ? [
+                'id' => $user->store->id,
+                'name' => $user->store->name,
+                'currency' => $user->store->currency,
+                'address' => $user->store->address,
+                'phone' => $user->store->phone,
+                'email' => $user->store->email,
+                'logo' => $user->store->logo ? asset('storage/' . $user->store->logo) : null,
+                'license_number' => $user->store->license_number,
+            ] : null,
+        ]);
     }
 
     public function getCustomers(Request $request)
@@ -97,8 +109,8 @@ class ApiController extends Controller
             ->map(function ($c) {
                 return [
                     'id' => $c->id,
-                    'uuid' => $c->uuid,
-                    'local_id' => $c->uuid,
+                    'uuid' => $c->uuid ?? (string) $c->id,
+                    'local_id' => $c->uuid ?? (string) $c->id,
                     'name' => $c->name,
                     'phone' => $c->phone,
                     'address' => $c->address,
@@ -152,10 +164,22 @@ class ApiController extends Controller
                 if (Sale::where('uuid', $saleData['uuid'])->exists())
                     continue;
 
-                // Find customer id if uuid provided
+                // Find customer id if uuid provided (check both uuid and local_id for robustness)
                 $customerId = null;
                 if (!empty($saleData['customer_uuid'])) {
-                    $customerId = Customer::where('uuid', $saleData['customer_uuid'])->value('id');
+                    $customerId = Customer::where('store_id', $user->store_id)
+                        ->where(function ($q) use ($saleData) {
+                            $q->where('uuid', $saleData['customer_uuid'])
+                                ->orWhere('uuid', 'LIKE', $saleData['customer_uuid']); // Some older clients might send it differently
+                        })->value('id');
+
+                    if (!$customerId) {
+                        // If not found by server UUID, maybe it's still using the mobile's local_id
+                        // Note: Our sync stores local_id as 'uuid' in the database for new customers
+                        $customerId = Customer::where('store_id', $user->store_id)
+                            ->where('uuid', $saleData['customer_uuid'])
+                            ->value('id');
+                    }
                 }
 
                 $sale = Sale::create([
@@ -238,7 +262,17 @@ class ApiController extends Controller
                 'sales' => array_map(fn($s) => ['local_id' => $s['uuid'], 'server_id' => 1], $changes['sales'] ?? []),
                 'expenses' => array_map(fn($e) => ['local_id' => $e['uuid']], $changes['expenses'] ?? []),
                 'debt_payments' => array_map(fn($p) => ['local_id' => $p['uuid']], $changes['debt_payments'] ?? []),
-            ]
+            ],
+            'store' => $user->store ? [
+                'id' => $user->store->id,
+                'name' => $user->store->name,
+                'currency' => $user->store->currency,
+                'address' => $user->store->address,
+                'phone' => $user->store->phone,
+                'email' => $user->store->email,
+                'logo' => $user->store->logo ? asset('storage/' . $user->store->logo) : null,
+                'license_number' => $user->store->license_number,
+            ] : null,
         ]);
     }
 }
