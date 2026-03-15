@@ -129,6 +129,43 @@
         @endif
     </div>
 
+    <!-- Payment History -->
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header bg-white border-bottom py-3">
+            <h5 class="mb-0 fw-bold"><i class="bi bi-clock-history me-2 text-primary"></i>{{ __('customers.recent_payments') ?? 'Historique des remboursements récents' }}</h5>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-4">{{ __('finances.date') }}</th>
+                        <th>{{ __('customers.customer_single') ?? 'Client' }}</th>
+                        <th class="text-end">{{ __('finances.amount') }}</th>
+                        <th>{{ __('pos.payment_method') ?? 'Méthode' }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse($recentPayments as $payment)
+                        <tr>
+                            <td class="ps-4">{{ $payment->paid_at->format('d/m/Y H:i') }}</td>
+                            <td><span class="fw-bold text-primary">{{ $payment->customer->name }}</span></td>
+                            <td class="text-end fw-bold text-success">{{ number_format($payment->amount, 2) }} {{ $currency }}</td>
+                            <td>
+                                <span class="badge bg-light text-dark border">
+                                    {{ $payment->payment_method }}
+                                </span>
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="4" class="text-center py-4 text-muted">{{ __('app.no_results') }}</td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+    </div>
+
     <!-- Payment Modal -->
     <div class="modal fade @if($showPaymentModal) show @endif"
         style="display: @if($showPaymentModal) block @else none @endif;" tabindex="-1">

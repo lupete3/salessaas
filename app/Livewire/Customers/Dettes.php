@@ -44,6 +44,17 @@ class Dettes extends Component
             'amount_paid' => $this->selectedSale->amount_paid + $this->paymentAmount
         ]);
 
+        // Also create a DebtPayment record for sync consistency
+        \App\Models\DebtPayment::create([
+            'store_id' => auth()->user()->store_id,
+            'user_id' => auth()->user()->id,
+            'customer_id' => $this->selectedSale->customer_id,
+            'uuid' => (string) \Illuminate\Support\Str::uuid(),
+            'amount' => $this->paymentAmount,
+            'payment_method' => 'cash', // Default for now
+            'paid_at' => now(),
+        ]);
+
         $this->showPaymentModal = false;
         $this->dispatch('notify', ['message' => __('customers.payment_recorded')]);
     }
@@ -71,6 +82,12 @@ class Dettes extends Component
         $dettes = $query->paginate(15);
         $customers = Customer::forStore($storeId)->orderBy('name')->get();
 
+        $recentPayments = \App\Models\DebtPayment::where('store_id', $storeId)
+            ->with('customer')
+            ->latest()
+            ->limit(10)
+            ->get();
+
         $store = auth()->user()->store;
         $currency = $store->currency ?: 'USD';
 
@@ -79,6 +96,7 @@ class Dettes extends Component
             'customers' => $customers,
             'currency' => $currency,
             'currentStore' => $store,
+            'recentPayments' => $recentPayments,
         ])->title(__('customers.debt_followup'));
     }
 }

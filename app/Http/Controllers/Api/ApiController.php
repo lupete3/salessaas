@@ -93,7 +93,7 @@ class ApiController extends Controller
                 return [
                     'id' => $c->id,
                     'uuid' => $c->uuid,
-                    'local_id' => $c->uuid, // Map uuid to local_id for mobile consistency
+                    'local_id' => $c->uuid,
                     'name' => $c->name,
                     'phone' => $c->phone,
                     'address' => $c->address,
@@ -101,7 +101,22 @@ class ApiController extends Controller
                 ];
             });
 
-        return response()->json(['customers' => $customers]);
+        $payments = DebtPayment::where('store_id', $user->store_id)
+            ->get()
+            ->map(function ($p) {
+                return [
+                    'local_id' => $p->uuid,
+                    'customer_uuid' => $p->customer->uuid,
+                    'amount' => (float) $p->amount,
+                    'payment_method' => $p->payment_method,
+                    'paid_at' => $p->paid_at->toISOString(),
+                ];
+            });
+
+        return response()->json([
+            'customers' => $customers,
+            'debt_payments' => $payments
+        ]);
     }
 
     public function sync(Request $request)
