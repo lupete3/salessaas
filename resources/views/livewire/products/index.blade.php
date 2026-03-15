@@ -155,8 +155,8 @@
                                         <li><a class="dropdown-item" href="{{ route('products.edit', $product->id) }}"><i
                                                     class="bi bi-pencil me-2"></i>{{ __('app.edit') }}</a></li>
                                         <li><a class="dropdown-item"
-                                                href="{{ route('stock.movements', ['productId' => $product->id]) }}"><i
-                                                    class="bi bi-eye me-2"></i>{{ __('products.history_short') }}</a>
+                                                href="{{ route('stock.products.details', $product->id) }}"><i
+                                                    class="bi bi-eye me-2"></i>{{ __('Détails & Mouvements') }}</a>
                                         </li>
                                         <li>
                                             <hr class="dropdown-divider">

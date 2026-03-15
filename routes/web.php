@@ -80,6 +80,7 @@ Route::middleware(['auth', 'verified', 'tenant'])->group(function () {
         Route::get('/ajustement', StockAdjust::class)->name('adjust');
         Route::get('/inventaire', InventoryIndex::class)->name('inventory.index');
         Route::get('/inventaire/nouveau', InventoryCreate::class)->name('inventory.create');
+        Route::get('/produits/{product}', \App\Livewire\Stock\ProductDetails::class)->name('products.details');
     });
 
     // ── Fournisseurs ──────────────────────────────────────────────────────────
@@ -115,6 +116,7 @@ Route::middleware(['auth', 'verified', 'tenant'])->group(function () {
         Route::get('/', CustomersIndex::class)->name('index');
         Route::get('/ajouter', CustomerForm::class)->name('create');
         Route::get('/{customer}/modifier', CustomerForm::class)->name('edit');
+        Route::get('/{customer}/details', \App\Livewire\Customers\Details::class)->name('details');
         Route::get('/dettes', CustomerDettes::class)->name('dettes');
     });
 

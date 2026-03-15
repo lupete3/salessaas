@@ -60,8 +60,8 @@
                                 </span>
                             </td>
                             <td
-                                class="text-center fw-bold {{ in_array($m->type, ['sale', 'adjust_out', 'expired']) ? 'text-danger' : 'text-success' }}">
-                                {{ in_array($m->type, ['sale', 'adjust_out', 'expired']) ? '-' : '+' }}{{ $m->quantity }}
+                                class="text-center fw-bold {{ $m->quantity_after < $m->quantity_before ? 'text-danger' : 'text-success' }}">
+                                {{ $m->quantity_after < $m->quantity_before ? '-' : '+' }}{{ $m->quantity }}
                             </td>
                             <td class="text-center">{{ $m->quantity_before }}</td>
                             <td class="text-center fw-bold">{{ $m->quantity_after }}</td>

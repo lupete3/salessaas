@@ -180,6 +180,212 @@
                 </div>
             </div>
         </div>
+        <!-- Customers Report Card -->
+        <div class="col-md-6 col-lg-4">
+            <div class="card h-100 shadow-sm border-0 border-top border-4 border-primary transition-hover">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center gap-3 mb-3">
+                        <div class="p-3 bg-primary bg-opacity-10 text-primary rounded-4">
+                            <i class="bi bi-people fs-3"></i>
+                        </div>
+                        <h5 class="fw-bold mb-0">{{ __('reports.customers_report') }}</h5>
+                    </div>
+                    <p class="text-muted small">
+                        {{ __('reports.customers_report_desc') }}
+                    </p>
+                    <div class="mt-4 pt-2">
+                        <button wire:click="exportCustomersReport" wire:loading.attr="disabled"
+                            class="btn btn-primary text-white w-100 py-2 fw-bold shadow-sm rounded-3">
+                            <span wire:loading.remove wire:target="exportCustomersReport">
+                                <i class="bi bi-download me-2"></i> {{ __('reports.export_pdf') }}
+                            </span>
+                            <span wire:loading wire:target="exportCustomersReport">
+                                <span class="spinner-border spinner-border-sm me-1" role="status"></span>
+                                {{ __('app.generating') ?? 'Génération...' }}
+                            </span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Suppliers Report Card -->
+        <div class="col-md-6 col-lg-4">
+            <div class="card h-100 shadow-sm border-0 border-top border-4 border-secondary transition-hover">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center gap-3 mb-3">
+                        <div class="p-3 bg-secondary bg-opacity-10 text-secondary rounded-4">
+                            <i class="bi bi-truck-flatbed fs-3"></i>
+                        </div>
+                        <h5 class="fw-bold mb-0">{{ __('reports.suppliers_report') }}</h5>
+                    </div>
+                    <p class="text-muted small">
+                        {{ __('reports.suppliers_report_desc') }}
+                    </p>
+                    <div class="mt-4 pt-2">
+                        <button wire:click="exportSuppliersReport" wire:loading.attr="disabled"
+                            class="btn btn-secondary text-white w-100 py-2 fw-bold shadow-sm rounded-3">
+                            <span wire:loading.remove wire:target="exportSuppliersReport">
+                                <i class="bi bi-download me-2"></i> {{ __('reports.export_pdf') }}
+                            </span>
+                            <span wire:loading wire:target="exportSuppliersReport">
+                                <span class="spinner-border spinner-border-sm me-1" role="status"></span>
+                                {{ __('app.generating') ?? 'Génération...' }}
+                            </span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Customer Debts Report Card -->
+        <div class="col-md-6 col-lg-4">
+            <div class="card h-100 shadow-sm border-0 border-top border-4 border-danger transition-hover">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center gap-3 mb-3">
+                        <div class="p-3 bg-danger bg-opacity-10 text-danger rounded-4">
+                            <i class="bi bi-bank2 fs-3"></i>
+                        </div>
+                        <h5 class="fw-bold mb-0">{{ __('reports.customer_debts_report') }}</h5>
+                    </div>
+                    <p class="text-muted small">
+                        {{ __('reports.customer_debts_report_desc') }}
+                    </p>
+                    <div class="mt-4 pt-2">
+                        <button wire:click="exportCustomerDebtsReport" wire:loading.attr="disabled"
+                            class="btn btn-danger text-white w-100 py-2 fw-bold shadow-sm rounded-3">
+                            <span wire:loading.remove wire:target="exportCustomerDebtsReport">
+                                <i class="bi bi-download me-2"></i> {{ __('reports.export_pdf') }}
+                            </span>
+                            <span wire:loading wire:target="exportCustomerDebtsReport">
+                                <span class="spinner-border spinner-border-sm me-1" role="status"></span>
+                                {{ __('app.generating') ?? 'Génération...' }}
+                            </span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Payments Report Card -->
+        <div class="col-md-6 col-lg-4">
+            <div class="card h-100 shadow-sm border-0 border-top border-4 border-success transition-hover">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center gap-3 mb-3">
+                        <div class="p-3 bg-success bg-opacity-10 text-success rounded-4">
+                            <i class="bi bi-cash-stack fs-3"></i>
+                        </div>
+                        <h5 class="fw-bold mb-0">{{ __('reports.payments_report') }}</h5>
+                    </div>
+                    <div class="mb-3">
+                        <label
+                            class="form-label small fw-bold text-muted">{{ __('reports.period') ?? 'Période' }}</label>
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <input type="date" wire:model.live="startDate"
+                                    class="form-control form-control-sm shadow-sm">
+                            </div>
+                            <div class="col-6">
+                                <input type="date" wire:model.live="endDate"
+                                    class="form-control form-control-sm shadow-sm">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-auto">
+                        <button wire:click="exportPaymentsReport" wire:loading.attr="disabled"
+                            class="btn btn-success text-white w-100 py-2 fw-bold shadow-sm rounded-3">
+                            <span wire:loading.remove wire:target="exportPaymentsReport">
+                                <i class="bi bi-download me-2"></i> {{ __('reports.export_pdf') }}
+                            </span>
+                            <span wire:loading wire:target="exportPaymentsReport">
+                                <span class="spinner-border spinner-border-sm me-1" role="status"></span>
+                                {{ __('app.generating') ?? 'Génération...' }}
+                            </span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Inventories Report Card -->
+        <div class="col-md-6 col-lg-4">
+            <div class="card h-100 shadow-sm border-0 border-top border-4 border-info transition-hover">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center gap-3 mb-3">
+                        <div class="p-3 bg-info bg-opacity-10 text-info rounded-4">
+                            <i class="bi bi-clipboard2-check fs-3"></i>
+                        </div>
+                        <h5 class="fw-bold mb-0">{{ __('reports.inventories_report') }}</h5>
+                    </div>
+                    <div class="mb-3">
+                        <label
+                            class="form-label small fw-bold text-muted">{{ __('reports.period') ?? 'Période' }}</label>
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <input type="date" wire:model.live="startDate"
+                                    class="form-control form-control-sm shadow-sm">
+                            </div>
+                            <div class="col-6">
+                                <input type="date" wire:model.live="endDate"
+                                    class="form-control form-control-sm shadow-sm">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-auto">
+                        <button wire:click="exportInventoriesReport" wire:loading.attr="disabled"
+                            class="btn btn-info text-white w-100 py-2 fw-bold shadow-sm rounded-3">
+                            <span wire:loading.remove wire:target="exportInventoriesReport">
+                                <i class="bi bi-download me-2"></i> {{ __('reports.export_pdf') }}
+                            </span>
+                            <span wire:loading wire:target="exportInventoriesReport">
+                                <span class="spinner-border spinner-border-sm me-1" role="status"></span>
+                                {{ __('app.generating') ?? 'Génération...' }}
+                            </span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stock Movements Report Card -->
+        <div class="col-md-6 col-lg-4">
+            <div class="card h-100 shadow-sm border-0 border-top border-4 border-warning transition-hover">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center gap-3 mb-3">
+                        <div class="p-3 bg-warning bg-opacity-10 text-warning rounded-4">
+                            <i class="bi bi-boxes fs-3"></i>
+                        </div>
+                        <h5 class="fw-bold mb-0">{{ __('reports.stock_movements_report') }}</h5>
+                    </div>
+                    <div class="mb-3">
+                        <label
+                            class="form-label small fw-bold text-muted">{{ __('reports.period') ?? 'Période' }}</label>
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <input type="date" wire:model.live="startDate"
+                                    class="form-control form-control-sm shadow-sm">
+                            </div>
+                            <div class="col-6">
+                                <input type="date" wire:model.live="endDate"
+                                    class="form-control form-control-sm shadow-sm">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-auto">
+                        <button wire:click="exportStockMovementsReport" wire:loading.attr="disabled"
+                            class="btn btn-warning text-dark w-100 py-2 fw-bold shadow-sm rounded-3">
+                            <span wire:loading.remove wire:target="exportStockMovementsReport">
+                                <i class="bi bi-download me-2"></i> {{ __('reports.export_pdf') }}
+                            </span>
+                            <span wire:loading wire:target="exportStockMovementsReport">
+                                <span class="spinner-border spinner-border-sm me-1" role="status"></span>
+                                {{ __('app.generating') ?? 'Génération...' }}
+                            </span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <style>

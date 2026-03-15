@@ -51,6 +51,8 @@
                                 {{ number_format($customer->total_debt, 2) }} {{ $currency }}
                             </td>
                             <td class="text-end pe-4">
+                                <a href="{{ route('customers.details', $customer->id) }}"
+                                    class="btn btn-sm btn-icon text-info" title="Détails"><i class="bi bi-eye"></i></a>
                                 <a href="{{ route('customers.edit', $customer->id) }}" class="btn btn-sm btn-icon"><i
                                         class="bi bi-pencil"></i></a>
                                 <button wire:click="confirmDelete({{ $customer->id }})"

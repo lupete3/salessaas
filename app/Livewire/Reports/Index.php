@@ -152,6 +152,121 @@ class Index extends Component
         $this->dispatch('download-pdf', base64_encode($pdf->output()), __('reports.finance_report_file') . '-' . $this->startDate . '-' . __('reports.to') . '-' . $this->endDate . '.pdf');
     }
 
+    public function exportCustomersReport(): void
+    {
+        $store = auth()->user()->store;
+        $customers = \App\Models\Customer::where('store_id', $store->id)->orderBy('name')->get();
+
+        $pdf = Pdf::loadView('pdf.customers-report', [
+            'customers' => $customers,
+            'date' => now()->format('d/m/Y H:i'),
+            'currentStore' => $store,
+        ])->setPaper('a4', 'portrait');
+
+        $this->dispatch('download-pdf', base64_encode($pdf->output()), __('reports.customers_report_file') . '-' . now()->format('Y-m-d') . '.pdf');
+    }
+
+    public function exportSuppliersReport(): void
+    {
+        $store = auth()->user()->store;
+        $suppliers = \App\Models\Supplier::where('store_id', $store->id)->orderBy('name')->get();
+
+        $pdf = Pdf::loadView('pdf.suppliers-report', [
+            'suppliers' => $suppliers,
+            'date' => now()->format('d/m/Y H:i'),
+            'currentStore' => $store,
+        ])->setPaper('a4', 'portrait');
+
+        $this->dispatch('download-pdf', base64_encode($pdf->output()), __('reports.suppliers_report_file') . '-' . now()->format('Y-m-d') . '.pdf');
+    }
+
+    public function exportCustomerDebtsReport(): void
+    {
+        $store = auth()->user()->store;
+        $currency = $store->currency ?: 'USD';
+
+        $customersWithDebts = \App\Models\Customer::where('store_id', $store->id)
+            ->where('total_debt', '>', 0)
+            ->orderByDesc('total_debt')
+            ->get();
+
+        $pdf = Pdf::loadView('pdf.customer-debts-report', [
+            'customers' => $customersWithDebts,
+            'totalDebt' => $customersWithDebts->sum('total_debt'),
+            'date' => now()->format('d/m/Y H:i'),
+            'currentStore' => $store,
+            'currency' => $currency,
+        ])->setPaper('a4', 'portrait');
+
+        $this->dispatch('download-pdf', base64_encode($pdf->output()), __('reports.customer_debts_report_file') . '-' . now()->format('Y-m-d') . '.pdf');
+    }
+
+    public function exportPaymentsReport(): void
+    {
+        $store = auth()->user()->store;
+        $currency = $store->currency ?: 'USD';
+
+        $payments = \App\Models\DebtPayment::where('store_id', $store->id)
+            ->whereBetween('paid_at', [$this->startDate . ' 00:00:00', $this->endDate . ' 23:59:59'])
+            ->with(['customer', 'user'])
+            ->latest()
+            ->get();
+
+        $pdf = Pdf::loadView('pdf.payments-report', [
+            'payments' => $payments,
+            'startDate' => $this->startDate,
+            'endDate' => $this->endDate,
+            'totalAmount' => $payments->sum('amount'),
+            'date' => now()->format('d/m/Y H:i'),
+            'currentStore' => $store,
+            'currency' => $currency,
+        ])->setPaper('a4', 'portrait');
+
+        $this->dispatch('download-pdf', base64_encode($pdf->output()), __('reports.payments_report_file') . '-' . $this->startDate . '-' . __('reports.to') . '-' . $this->endDate . '.pdf');
+    }
+
+    public function exportInventoriesReport(): void
+    {
+        $store = auth()->user()->store;
+
+        $inventories = \App\Models\Inventory::where('store_id', $store->id)
+            ->whereBetween('date', [$this->startDate, $this->endDate])
+            ->with(['user', 'items.product'])
+            ->latest('date')
+            ->get();
+
+        $pdf = Pdf::loadView('pdf.inventories-report', [
+            'inventories' => $inventories,
+            'startDate' => $this->startDate,
+            'endDate' => $this->endDate,
+            'date' => now()->format('d/m/Y H:i'),
+            'currentStore' => $store,
+        ])->setPaper('a4', 'landscape');
+
+        $this->dispatch('download-pdf', base64_encode($pdf->output()), __('reports.inventories_report_file') . '-' . $this->startDate . '-' . __('reports.to') . '-' . $this->endDate . '.pdf');
+    }
+
+    public function exportStockMovementsReport(): void
+    {
+        $store = auth()->user()->store;
+
+        $movements = \App\Models\StockMovement::where('store_id', $store->id)
+            ->whereBetween('created_at', [$this->startDate . ' 00:00:00', $this->endDate . ' 23:59:59'])
+            ->with(['product', 'user'])
+            ->latest()
+            ->get();
+
+        $pdf = Pdf::loadView('pdf.stock-movements-report', [
+            'movements' => $movements,
+            'startDate' => $this->startDate,
+            'endDate' => $this->endDate,
+            'date' => now()->format('d/m/Y H:i'),
+            'currentStore' => $store,
+        ])->setPaper('a4', 'landscape');
+
+        $this->dispatch('download-pdf', base64_encode($pdf->output()), __('reports.stock_movements_report_file') . '-' . $this->startDate . '-' . __('reports.to') . '-' . $this->endDate . '.pdf');
+    }
+
     public function render()
     {
         $store = auth()->user()->store;
