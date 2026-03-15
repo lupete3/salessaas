@@ -19,6 +19,7 @@ class Index extends Component
     public string $startDate = '';
     public string $endDate = '';
     public ?int $supplierId = null;
+    public ?int $inventoryId = null;
 
     public function mount(): void
     {
@@ -249,6 +250,49 @@ class Index extends Component
         $this->dispatch('download-pdf', base64_encode($pdf->output()), __('reports.inventories_report_file') . '-' . $this->startDate . '-' . __('reports.to') . '-' . $this->endDate . '.pdf');
     }
 
+    public function exportInventoryDetailReport(): void
+    {
+        if (!$this->inventoryId) {
+            return;
+        }
+
+        $store = auth()->user()->store;
+        $currency = $store->currency ?: 'USD';
+
+        $inventory = \App\Models\Inventory::where('store_id', $store->id)
+            ->with(['user', 'items.product'])
+            ->findOrFail($this->inventoryId);
+
+        // Compute summary values
+        $items = $inventory->items->map(function ($item) use ($currency) {
+            $diff = $item->quantity_difference ?? ($item->quantity_physical - $item->quantity_theoretical);
+            $purchasePrice = $item->product?->purchase_price ?? 0;
+            return [
+                'item' => $item,
+                'diff' => $diff,
+                'value_diff' => abs($diff) * $purchasePrice,
+                'is_shortage' => $diff < 0,
+                'is_surplus' => $diff > 0,
+            ];
+        });
+
+        $totalShortageValue = $items->where('is_shortage', true)->sum('value_diff');
+        $totalSurplusValue = $items->where('is_surplus', true)->sum('value_diff');
+
+        $pdf = Pdf::loadView('pdf.inventory-detail-report', [
+            'inventory' => $inventory,
+            'items' => $items,
+            'totalShortageValue' => $totalShortageValue,
+            'totalSurplusValue' => $totalSurplusValue,
+            'date' => now()->format('d/m/Y H:i'),
+            'currentStore' => $store,
+            'currency' => $currency,
+        ])->setPaper('a4', 'landscape');
+
+        $filename = __('reports.inventories_report_file') . '-detail-' . $inventory->date->format('Y-m-d') . '.pdf';
+        $this->dispatch('download-pdf', base64_encode($pdf->output()), $filename);
+    }
+
     public function exportStockMovementsReport(): void
     {
         $store = auth()->user()->store;
@@ -275,8 +319,11 @@ class Index extends Component
         $store = auth()->user()->store;
         $currency = $store->currency ?: 'USD';
         $suppliers = \App\Models\Supplier::where('store_id', $store->id)->get();
+        $inventories = \App\Models\Inventory::where('store_id', $store->id)
+            ->latest('date')
+            ->get();
 
-        return view('livewire.reports.index', compact('suppliers'))
+        return view('livewire.reports.index', compact('suppliers', 'inventories'))
             ->with([
                 'currency' => $currency,
                 'currentStore' => $store,

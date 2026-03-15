@@ -317,29 +317,58 @@
                         </div>
                         <h5 class="fw-bold mb-0">{{ __('reports.inventories_report') }}</h5>
                     </div>
+                    <p class="text-muted small">{{ __('reports.inventories_report_desc') }}</p>
+
+                    {{-- Detailed report per inventory --}}
                     <div class="mb-3">
-                        <label
-                            class="form-label small fw-bold text-muted">{{ __('reports.period') ?? 'Période' }}</label>
-                        <div class="row g-2">
-                            <div class="col-6">
-                                <input type="date" wire:model.live="startDate"
-                                    class="form-control form-control-sm shadow-sm">
-                            </div>
-                            <div class="col-6">
-                                <input type="date" wire:model.live="endDate"
-                                    class="form-control form-control-sm shadow-sm">
+                        <label class="form-label small fw-bold text-muted">Choisir un inventaire</label>
+                        <select wire:model.live="inventoryId" class="form-select form-select-sm shadow-sm">
+                            <option value="">— Sélectionner —</option>
+                            @foreach($inventories as $inv)
+                                <option value="{{ $inv->id }}">
+                                    {{ $inv->date->format('d/m/Y') }}
+                                    @if($inv->status === 'completed') ✓ @endif
+                                    ({{ $inv->items->count() }} art.)
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <button wire:click="exportInventoryDetailReport" wire:loading.attr="disabled"
+                            class="btn btn-info text-white py-2 fw-bold shadow-sm rounded-3"
+                            @if(!$inventoryId) disabled @endif>
+                            <span wire:loading.remove wire:target="exportInventoryDetailReport">
+                                <i class="bi bi-file-earmark-text me-2"></i> Rapport Détaillé
+                            </span>
+                            <span wire:loading wire:target="exportInventoryDetailReport">
+                                <span class="spinner-border spinner-border-sm me-1" role="status"></span>
+                                {{ __('app.generating') }}
+                            </span>
+                        </button>
+
+                        {{-- Global list by date range --}}
+                        <div class="mb-2">
+                            <label class="form-label small fw-bold text-muted">{{ __('reports.period') }}</label>
+                            <div class="row g-2">
+                                <div class="col-6">
+                                    <input type="date" wire:model.live="startDate"
+                                        class="form-control form-control-sm shadow-sm">
+                                </div>
+                                <div class="col-6">
+                                    <input type="date" wire:model.live="endDate"
+                                        class="form-control form-control-sm shadow-sm">
+                                </div>
                             </div>
                         </div>
-                    </div>
-                    <div class="mt-auto">
                         <button wire:click="exportInventoriesReport" wire:loading.attr="disabled"
-                            class="btn btn-info text-white w-100 py-2 fw-bold shadow-sm rounded-3">
+                            class="btn btn-outline-info py-2 fw-bold shadow-sm rounded-3">
                             <span wire:loading.remove wire:target="exportInventoriesReport">
-                                <i class="bi bi-download me-2"></i> {{ __('reports.export_pdf') }}
+                                <i class="bi bi-download me-2"></i> Liste globale (PDF)
                             </span>
                             <span wire:loading wire:target="exportInventoriesReport">
                                 <span class="spinner-border spinner-border-sm me-1" role="status"></span>
-                                {{ __('app.generating') ?? 'Génération...' }}
+                                {{ __('app.generating') }}
                             </span>
                         </button>
                     </div>
