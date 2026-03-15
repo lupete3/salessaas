@@ -12,6 +12,7 @@ class Sale extends Model
         'store_id',
         'user_id',
         'customer_id',
+        'uuid',
         'sale_number',
         'total_amount',
         'discount',

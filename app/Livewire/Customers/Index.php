@@ -42,8 +42,10 @@ class Index extends Component
     public function render()
     {
         $customers = Customer::forStore(auth()->user()->store_id)
-            ->where('name', 'like', '%' . $this->search . '%')
-            ->orWhere('phone', 'like', '%' . $this->search . '%')
+            ->where(function ($q) {
+                $q->where('name', 'like', '%' . $this->search . '%')
+                    ->orWhere('phone', 'like', '%' . $this->search . '%');
+            })
             ->latest()
             ->paginate(15);
 
