@@ -102,6 +102,7 @@ interface AppState {
   markExpensesSynced: (localIds: string[]) => void;
 
   // Debt Payments
+  setDebtPayments: (payments: DebtPayment[]) => void;
   addDebtPayment: (payment: DebtPayment) => void;
   markDebtPaymentsSynced: (localIds: string[]) => void;
 
@@ -176,6 +177,19 @@ export const useAppStore = create<AppState>()(
       },
 
       // ── Debt Payments ────────────────────────────────────────────────────────
+      setDebtPayments: (payments) => {
+        const unsynced = get().debtPayments.filter(p => !p.is_synced);
+        // Avoid duplicates
+        const unsyncedIds = new Set(unsynced.map(p => p.local_id));
+        const synced = payments.map(p => ({ ...p, is_synced: true }));
+        const filteredUnsynced = unsynced.filter(p => !unsyncedIds.has(p.local_id)); // Wait, this logic is a bit circular.
+        
+        // Correct logic: take all incoming (synced) + local unsynced that aren't already in incoming
+        const incomingIds = new Set(payments.map(p => p.local_id));
+        const localStillUnsynced = unsynced.filter(p => !incomingIds.has(p.local_id));
+        
+        set({ debtPayments: [...synced, ...localStillUnsynced] });
+      },
       addDebtPayment: (payment) => {
         const { customers, debtPayments } = get();
         const updatedCustomers = customers.map(c => {
@@ -263,10 +277,12 @@ export const useAppStore = create<AppState>()(
         const { customers, offlineQueue } = get();
         let updatedCustomers = customers;
 
-        if (sale.payment_method === 'credit' && sale.customer_uuid) {
+        const debtAmount = Math.max(0, sale.final_amount - sale.amount_paid);
+
+        if (debtAmount > 0 && sale.customer_uuid) {
           updatedCustomers = customers.map(c => {
             if (c.uuid === sale.customer_uuid || c.local_id === sale.customer_uuid) {
-              return { ...c, total_debt: c.total_debt + sale.total_amount };
+              return { ...c, total_debt: c.total_debt + debtAmount };
             }
             return c;
           });
