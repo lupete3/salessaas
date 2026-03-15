@@ -42,6 +42,8 @@ export interface LocalSale {
   sold_at: string;  // ISO DateTime
   payment_method: 'cash' | 'mobile_money' | 'insurance' | 'credit';
   customer_uuid?: string;
+  customer_name?: string;
+  customer_phone?: string;
   customer_id?: number;
   notes: string;
   discount: number;
@@ -145,11 +147,30 @@ export const useAppStore = create<AppState>()(
       
       // ── Customers ─────────────────────────────────────────────────────────────
       setCustomers: (serverCustomers) => {
-        const current = get().customers;
-        const unsynced = current.filter(c => !c.is_synced);
-        const synced = serverCustomers.map(c => ({ ...c, is_synced: true }));
+        const { customers } = get();
         
-        // Avoid duplicate customers if they were just synced but not yet updated locally
+        // 1. Identify unsynced (local-only) customers
+        const unsynced = customers.filter(c => !c.is_synced);
+        
+        // 2. Identify synced customers that might have "pending" local debt 
+        // (debt that was added locally but server version hasn't reflected yet)
+        const localSyncedMap = new Map();
+        customers.filter(c => c.is_synced).forEach(c => {
+           if (c.uuid) localSyncedMap.set(c.uuid, c.total_debt);
+        });
+
+        const synced = serverCustomers.map(sc => {
+          const localDebt = localSyncedMap.get(sc.uuid);
+          // If local debt is higher, it probably contains pending sales not yet 
+          // fully processed/returned by the server list.
+          const finalDebt = (localDebt !== undefined && localDebt > sc.total_debt) 
+              ? localDebt 
+              : sc.total_debt;
+              
+          return { ...sc, total_debt: finalDebt, is_synced: true };
+        });
+        
+        // 3. Merge
         const syncedUuids = new Set(synced.map(c => c.uuid));
         const filteredUnsynced = unsynced.filter(c => !c.local_id || !syncedUuids.has(c.local_id));
 

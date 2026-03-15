@@ -122,6 +122,8 @@ export default function POSScreen() {
       sold_at: new Date().toISOString(),
       payment_method: paymentMethod,
       customer_uuid: selectedCustomer?.uuid || selectedCustomer?.local_id || undefined,
+      customer_name: selectedCustomer?.name,
+      customer_phone: selectedCustomer?.phone || undefined,
       notes: notes || '',
       discount: discountAmt || 0,
       amount_paid: amountPaidNum,
@@ -161,43 +163,49 @@ export default function POSScreen() {
       </tr>
     `).join('');
 
-    const subtotal = sale.total_amount + sale.discount;
-
     return `
       <!DOCTYPE html>
       <html>
         <head>
           <meta charset="utf-8" />
           <style>
-            body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; padding: 20px; color: #111; max-width: 400px; margin: 0 auto; }
-            .header { text-align: center; margin-bottom: 20px; border-bottom: 1px dashed #ccc; padding-bottom: 20px; }
-            .title { font-size: 24px; font-weight: bold; margin: 0; text-transform: uppercase; }
-            .subtitle { font-size: 14px; color: #666; margin: 5px 0 0 0; }
-            .sale-info { font-size: 14px; margin-bottom: 20px; line-height: 1.5; }
-            table { width: 100%; border-collapse: collapse; margin-bottom: 15px; font-size: 14px; }
+            body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; padding: 10px; color: #111; max-width: 320px; margin: 0 auto; }
+            .header { text-align: center; margin-bottom: 15px; border-bottom: 1px dashed #ccc; padding-bottom: 10px; }
+            .title { font-size: 20px; font-weight: bold; margin: 0; text-transform: uppercase; }
+            .subtitle { font-size: 14px; color: #444; margin: 5px 0 0 0; font-weight: bold; }
+            .store-info { font-size: 11px; color: #555; margin-top: 5px; line-height: 1.3; }
+            .sale-info { font-size: 12px; margin-bottom: 15px; line-height: 1.4; border-bottom: 1px solid #eee; padding-bottom: 10px; }
+            table { width: 100%; border-collapse: collapse; margin-bottom: 10px; font-size: 12px; }
             th { text-align: left; border-bottom: 1px solid #333; padding: 5px 0; }
-            td { padding: 8px 0; border-bottom: 1px solid #eee; }
+            td { padding: 6px 0; border-bottom: 1px solid #eee; }
             .right { text-align: right; }
-            .totals { margin-top: 15px; font-size: 14px; text-align: right; line-height: 1.6; }
-            .grand-total { font-size: 20px; font-weight: bold; padding-top: 10px; border-top: 1px solid #333; margin-top: 10px; }
-            .footer { text-align: center; font-size: 12px; color: #888; margin-top: 40px; border-top: 1px dashed #ccc; padding-top: 20px; }
+            .totals { margin-top: 10px; font-size: 13px; text-align: right; line-height: 1.5; }
+            .grand-total { font-size: 18px; font-weight: bold; padding-top: 8px; border-top: 1px solid #333; margin-top: 8px; }
+            .footer { text-align: center; font-size: 11px; color: #777; margin-top: 30px; border-top: 1px dashed #ccc; padding-top: 15px; }
             @media print { body { padding: 0; } }
           </style>
         </head>
         <body>
           <div class="header">
-            <h1 class="title">${store?.name ?? 'MAGASIN'}</h1>
-            <p class="subtitle">Reçu de Caisse</p>
+            ${store?.logo ? `<img src="${store.logo}" style="max-height: 60px; margin-bottom: 10px;" />` : ''}
+            <h1 class="title">${store?.name ?? 'NOTRE MAGASIN'}</h1>
+            <p class="subtitle">REÇU DE CAISSE</p>
+            <div class="store-info">
+              ${store?.address ? `<div>${store.address}</div>` : ''}
+              ${store?.phone ? `<div>Tél: ${store.phone}</div>` : ''}
+              ${store?.email ? `<div>Email: ${store.email}</div>` : ''}
+              ${store?.license_number ? `<div>ID: ${store.license_number}</div>` : ''}
+            </div>
           </div>
           
           <div class="sale-info">
             <div><strong>Date :</strong> ${new Date(sale.sold_at).toLocaleString('fr-FR')}</div>
             <div><strong>N° Réf :</strong> ${sale.local_id}</div>
             <div><strong>Paiement :</strong> ${sale.payment_method.toUpperCase()}</div>
-            ${selectedCustomer ? `
-              <div style="margin-top: 10px; padding-top: 10px; border-top: 1px dashed #eee;">
-                <strong>Client :</strong> ${selectedCustomer.name}<br/>
-                ${selectedCustomer.phone ? `<strong>Tél :</strong> ${selectedCustomer.phone}` : ''}
+            ${sale.customer_name ? `
+              <div style="margin-top: 8px; padding-top: 8px; border-top: 1px dotted #ccc;">
+                <strong>Client :</strong> ${sale.customer_name}<br/>
+                ${sale.customer_phone ? `<strong>Tél :</strong> ${sale.customer_phone}` : ''}
               </div>
             ` : ''}
           </div>
@@ -205,14 +213,19 @@ export default function POSScreen() {
           <table>
             <thead>
               <tr>
-                <th>Article</th>
+                <th>Désignation</th>
                 <th class="right">Qté</th>
-                <th class="right">P.U</th>
                 <th class="right">Total</th>
               </tr>
             </thead>
             <tbody>
-              ${itemsHtml}
+              ${sale.items.map(i => `
+                <tr>
+                  <td>${i.product_name}<br/><small>${parseFloat(i.unit_price as any).toFixed(2)}</small></td>
+                  <td class="right">${i.quantity}</td>
+                  <td class="right">${parseFloat(i.subtotal as any).toFixed(2)}</td>
+                </tr>
+              `).join('')}
             </tbody>
           </table>
           
@@ -220,15 +233,16 @@ export default function POSScreen() {
             <div>Sous-total : ${sale.total_amount.toFixed(2)} ${currency}</div>
             ${sale.discount > 0 ? `<div>Remise : -${sale.discount.toFixed(2)} ${currency}</div>` : ''}
             <div class="grand-total">TOTAL : ${sale.final_amount.toFixed(2)} ${currency}</div>
-            <div style="margin-top: 10px;">
+            <div style="margin-top: 8px;">
               Reçu : ${sale.amount_paid.toFixed(2)} ${currency}<br/>
-              Rendu : ${sale.change_given.toFixed(2)} ${currency}
+              ${sale.change_given > 0 ? `Rendu : ${sale.change_given.toFixed(2)} ${currency}` : ''}
+              ${(sale.final_amount - sale.amount_paid) > 0.01 ? `<strong>Reste (Dette) : ${(sale.final_amount - sale.amount_paid).toFixed(2)} ${currency}</strong>` : ''}
             </div>
           </div>
           
           <div class="footer">
-            <p>Merci de votre confiance !</p>
-            <p style="font-size: 10px; margin-top: 4px;">Propulsé par SalesSaaS</p>
+            <p>Merci de votre visite et à bientôt !</p>
+            <p style="font-size: 9px; margin-top: 4px;">Facture générée par SalesSaaS</p>
           </div>
         </body>
       </html>

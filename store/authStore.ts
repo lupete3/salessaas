@@ -8,7 +8,11 @@ export interface StoreInfo {
   id: number;
   name: string;
   currency?: string;
-  logo: string | null;
+  address?: string | null;
+  phone?: string | null;
+  email?: string | null;
+  logo?: string | null;
+  license_number?: string | null;
 }
 
 export interface UserInfo {
@@ -31,6 +35,7 @@ interface AuthState {
   // Actions
   setApiUrl: (url: string) => void;
   loginSuccess: (token: string, user: UserInfo, store: StoreInfo) => void;
+  setStoreInfo: (store: StoreInfo) => void;
   logout: () => void;
 }
 
@@ -49,6 +54,8 @@ export const useAuthStore = create<AuthState>()(
 
       loginSuccess: (token, user, store) =>
         set({ token, user, store, isAuthenticated: true }),
+
+      setStoreInfo: (store) => set({ store }),
 
       logout: () =>
         set({ token: null, user: null, store: null, isAuthenticated: false }),

@@ -73,9 +73,12 @@ export const SyncService = {
       
       const cRes = await apiClient().get('/customers');
       useAppStore.getState().setCustomers(cRes.data.customers);
+      if (cRes.data.debt_payments) {
+        useAppStore.getState().setDebtPayments(cRes.data.debt_payments);
+      }
       
       useAppStore.getState().setLastSyncAt(new Date().toISOString());
-      console.log(`✅ Produits synchronisés.`);
+      console.log(`✅ Données synchronisées.`);
       return true;
     } catch (error) {
       console.warn('⚠️ Pull data échoué (mode hors-ligne):', error);
@@ -147,6 +150,11 @@ export const SyncService = {
       
       if (res.data.success) {
           const store = useAppStore.getState();
+          
+          // Refresh store info if returned
+          if (res.data.store) {
+            useAuthStore.getState().setStoreInfo(res.data.store); // We need to add this action to useAuthStore
+          }
           
           // Confirm synchronization locally
           if (res.data.results) {
