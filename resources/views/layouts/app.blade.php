@@ -421,8 +421,13 @@
                     </a>
                 </div>
                 <div class="sidebar-item">
-                    <a href="{{ route('stock.movements') }}" @class(['active' => request()->routeIs('stock.*')])>
+                    <a href="{{ route('stock.movements') }}" @class(['active' => request()->routeIs('stock.movements') || request()->routeIs('stock.adjust')])>
                         <i class="bi bi-boxes"></i>{{ __('app.stock') }}
+                    </a>
+                </div>
+                <div class="sidebar-item">
+                    <a href="{{ route('stock.inventory.index') }}" @class(['active' => request()->routeIs('stock.inventory.*')])>
+                        <i class="bi bi-clipboard2-check"></i>Faire un inventaire
                     </a>
                 </div>
 

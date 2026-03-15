@@ -5,6 +5,7 @@ return [
     'dashboard' => 'Tableau de bord',
     'pos' => 'Point de vente',
     'medicines' => 'Médicaments',
+    'products' => 'Produits',
     'stock' => 'Stock',
     'suppliers' => 'Fournisseurs',
     'purchases' => 'Achats',
