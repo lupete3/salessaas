@@ -17,6 +17,7 @@ return [
     'status_partial' => 'Partiels',
     'items' => 'Articles achetés',
     'medicine' => 'Médicament',
+    'product' => 'Produit',
     'quantity' => 'Quantité',
     'unit_price' => 'Prix unitaire',
     'subtotal' => 'Sous-total',

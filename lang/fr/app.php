@@ -25,6 +25,8 @@ return [
     'save' => 'Enregistrer',
     'cancel' => 'Annuler',
     'search' => 'Rechercher',
+    'user' => 'Utilisateur',
+    'completed' => 'Complété',
     'filter' => 'Filtrer',
     'export' => 'Exporter',
     'print' => 'Imprimer',
