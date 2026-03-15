@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\Product;
 use App\Models\Customer;
+use App\Models\DebtPayment;
 use App\Models\Expense;
 use App\Models\Sale;
 use App\Models\Store;
@@ -184,6 +185,28 @@ class ApiController extends Controller
                     'description' => $eData['description'],
                     'category' => $eData['category'],
                     'expense_date' => $eData['spent_at'] ? date('Y-m-d', strtotime($eData['spent_at'])) : now(),
+                ]);
+            }
+        }
+
+        // Process Debt Payments
+        if (isset($changes['debt_payments'])) {
+            foreach ($changes['debt_payments'] as $pData) {
+                if (DebtPayment::where('uuid', $pData['uuid'])->exists())
+                    continue;
+
+                $customerId = Customer::where('uuid', $pData['customer_uuid'])->value('id');
+                if (!$customerId)
+                    continue;
+
+                DebtPayment::create([
+                    'store_id' => $user->store_id,
+                    'user_id' => $user->id,
+                    'customer_id' => $customerId,
+                    'uuid' => $pData['uuid'],
+                    'amount' => $pData['amount'],
+                    'payment_method' => $pData['payment_method'],
+                    'paid_at' => $pData['paid_at'] ? date('Y-m-d H:i:s', strtotime($pData['paid_at'])) : now(),
                 ]);
             }
         }

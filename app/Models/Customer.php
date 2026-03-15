@@ -22,27 +22,23 @@ class Customer extends Model
         return $this->belongsTo(Store::class);
     }
 
-    public function sales(): HasMany
+    public function debtPayments(): HasMany
     {
-        return $this->hasMany(Sale::class);
-    }
-
-    public function scopeForStore($query, ?int $storeId)
-    {
-        if (is_null($storeId)) {
-            return $query;
-        }
-        return $query->where('store_id', $storeId);
+        return $this->hasMany(DebtPayment::class);
     }
 
     /** Calcule la dette totale actuelle du client */
     public function getTotalDebtAttribute(): float
     {
-        return $this->sales()
+        $salesDebt = $this->sales()
             ->where('status', 'completed')
             ->get()
             ->sum(function ($sale) {
                 return max(0, $sale->final_amount - $sale->amount_paid);
             });
+
+        $debtPayments = $this->debtPayments()->sum('amount');
+
+        return max(0, $salesDebt - $debtPayments);
     }
 }
