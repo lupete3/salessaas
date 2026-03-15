@@ -92,8 +92,26 @@ export default function POSScreen() {
   };
 
   const confirmSale = () => {
-    if (paymentMethod === 'credit' && !selectedCustomer) {
-      Alert.alert('Client requis', 'Veuillez sélectionner un client pour une vente à crédit.');
+    const receivedVal = amountReceived.trim();
+    
+    // Logic: 
+    // - If it's a 'credit' sale and field is empty, assume 0 paid.
+    // - If it's NOT a 'credit' sale and field is empty, assume paid in full.
+    // - If field has a value, use it (handles "0" correctly).
+    let amountPaidNum: number;
+    if (receivedVal === '') {
+      amountPaidNum = paymentMethod === 'credit' ? 0 : finalAmount;
+    } else {
+      amountPaidNum = parseFloat(receivedVal);
+    }
+
+    const debtAmount = Math.max(0, finalAmount - amountPaidNum);
+
+    if (debtAmount > 0 && !selectedCustomer) {
+      Alert.alert(
+        'Client requis', 
+        `Cette vente laisse un solde impayé de ${debtAmount.toFixed(2)} ${currency}. Veuillez sélectionner un client pour enregistrer cette dette.`
+      );
       return;
     }
 
@@ -104,8 +122,8 @@ export default function POSScreen() {
       customer_uuid: selectedCustomer?.uuid || selectedCustomer?.local_id,
       notes,
       discount: discountAmt,
-      amount_paid: parseFloat(amountReceived) || finalAmount,
-      change_given: changeGiven,
+      amount_paid: amountPaidNum,
+      change_given: Math.max(0, amountPaidNum - finalAmount),
       total_amount: total,
       final_amount: finalAmount,
       is_synced: false,
@@ -118,6 +136,7 @@ export default function POSScreen() {
         subtotal: c.subtotal,
       })),
     };
+
     queueSale(sale);
     setLastSale(sale);
     clearCart();
@@ -201,7 +220,7 @@ export default function POSScreen() {
             <div class="grand-total">TOTAL : ${sale.final_amount.toFixed(2)} ${currency}</div>
             <div style="margin-top: 10px;">
               Reçu : ${sale.amount_paid.toFixed(2)} ${currency}<br/>
-              Monnaie : ${sale.change_given.toFixed(2)} ${currency}
+              Rendu : ${sale.change_given.toFixed(2)} ${currency}
             </div>
           </div>
           
@@ -400,6 +419,11 @@ export default function POSScreen() {
 
             <Text style={styles.modalFinal}>Montant final : {finalAmount.toFixed(2)} {currency}</Text>
             {changeGiven > 0 && <Text style={[styles.modalFinal, { backgroundColor: 'rgba(52,152,219,0.1)', color: '#3498db' }]}>Monnaie à rendre : {changeGiven.toFixed(2)} {currency}</Text>}
+            {finalAmount > (parseFloat(amountReceived) || 0) && selectedCustomer && (
+              <Text style={[styles.modalFinal, { backgroundColor: 'rgba(231,76,60,0.1)', color: '#e74c3c' }]}>
+                Dette à enregistrer : {(finalAmount - (parseFloat(amountReceived) || 0)).toFixed(2)} {currency}
+              </Text>
+            )}
 
             <Text style={styles.modalLabel}>Mode de paiement</Text>
             <View style={styles.paymentMethods}>
