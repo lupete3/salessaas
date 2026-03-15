@@ -185,10 +185,13 @@ class Index extends Component
         $store = auth()->user()->store;
         $currency = $store->currency ?: 'USD';
 
+        // total_debt is an accessor (not a real column), so we filter/sort in PHP
         $customersWithDebts = \App\Models\Customer::where('store_id', $store->id)
-            ->where('total_debt', '>', 0)
-            ->orderByDesc('total_debt')
-            ->get();
+            ->with(['sales', 'debtPayments'])
+            ->get()
+            ->filter(fn($c) => $c->total_debt > 0)
+            ->sortByDesc('total_debt')
+            ->values();
 
         $pdf = Pdf::loadView('pdf.customer-debts-report', [
             'customers' => $customersWithDebts,
