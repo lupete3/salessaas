@@ -277,12 +277,19 @@ export const useAppStore = create<AppState>()(
         const { customers, offlineQueue } = get();
         let updatedCustomers = customers;
 
-        const debtAmount = Math.max(0, sale.final_amount - sale.amount_paid);
+        // Ensure we work with numbers to avoid string concatenation or NaN issues
+        const finalAmt = Number(sale.final_amount) || 0;
+        const paidAmt = Number(sale.amount_paid) || 0;
+        const debtAmount = Math.max(0, finalAmt - paidAmt);
 
-        if (debtAmount > 0 && sale.customer_uuid) {
+        // Precision check: only update if debt is significant (> 0.01)
+        if (debtAmount > 0.009 && sale.customer_uuid) {
           updatedCustomers = customers.map(c => {
-            if (c.uuid === sale.customer_uuid || c.local_id === sale.customer_uuid) {
-              return { ...c, total_debt: c.total_debt + debtAmount };
+            const isMatch = (c.uuid && c.uuid === sale.customer_uuid) || 
+                            (c.local_id && c.local_id === sale.customer_uuid);
+            if (isMatch) {
+              const currentDebt = Number(c.total_debt) || 0;
+              return { ...c, total_debt: currentDebt + debtAmount };
             }
             return c;
           });

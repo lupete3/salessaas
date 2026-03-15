@@ -92,7 +92,7 @@ export default function POSScreen() {
   };
 
   const confirmSale = () => {
-    const receivedVal = amountReceived.trim();
+    const receivedVal = (amountReceived || '').trim();
     
     // Logic: 
     // - If it's a 'credit' sale and field is empty, assume 0 paid.
@@ -102,12 +102,14 @@ export default function POSScreen() {
     if (receivedVal === '') {
       amountPaidNum = paymentMethod === 'credit' ? 0 : finalAmount;
     } else {
-      amountPaidNum = parseFloat(receivedVal);
+      // Use parseFloat but fallback to 0 if NaN helper
+      const parsed = parseFloat(receivedVal.replace(',', '.')); // Handle comma decimals
+      amountPaidNum = isNaN(parsed) ? 0 : parsed;
     }
 
     const debtAmount = Math.max(0, finalAmount - amountPaidNum);
 
-    if (debtAmount > 0 && !selectedCustomer) {
+    if (debtAmount > 0.009 && !selectedCustomer) {
       Alert.alert(
         'Client requis', 
         `Cette vente laisse un solde impayé de ${debtAmount.toFixed(2)} ${currency}. Veuillez sélectionner un client pour enregistrer cette dette.`
@@ -119,9 +121,9 @@ export default function POSScreen() {
       local_id: genLocalId(),
       sold_at: new Date().toISOString(),
       payment_method: paymentMethod,
-      customer_uuid: selectedCustomer?.uuid || selectedCustomer?.local_id,
-      notes,
-      discount: discountAmt,
+      customer_uuid: selectedCustomer?.uuid || selectedCustomer?.local_id || undefined,
+      notes: notes || '',
+      discount: discountAmt || 0,
       amount_paid: amountPaidNum,
       change_given: Math.max(0, amountPaidNum - finalAmount),
       total_amount: total,
@@ -387,7 +389,7 @@ export default function POSScreen() {
       {/* Checkout Modal */}
       <Modal visible={checkoutVisible} animationType="slide" transparent>
         <KeyboardAvoidingView 
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'padding'}
           style={{ flex: 1 }}
         >
           <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
