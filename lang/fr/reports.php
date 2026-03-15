@@ -30,6 +30,7 @@ return [
     'filter_supplier' => 'Filtrer par fournisseur',
     'summary' => 'Résumé',
     'details' => 'Détails',
+    'total' => 'Total',
     'finance_filters_hint' => 'Utilise les filtres de date de la section Ventes',
 
     // PDF Reports

@@ -55,8 +55,14 @@ return [
     'no_results' => 'Hakuna matokeo yaliyopatikana',
     'actions' => 'Hatua',
     'form' => 'Fomu',
-
-    // Status
+    'name' => 'Jina',
+    'phone' => 'Simu',
+    'email' => 'Barua Pepe',
+    'address' => 'Anwani',
+    'contact' => 'Mawasiliano',
+    'total_debt' => 'Jumla ya Deni',
+    'total_amount' => 'Jumla ya Kiasi',
+    'products' => 'Bidhaa',
     'active' => 'Inafanya kazi',
     'inactive' => 'Haifanyi kazi',
     'success' => 'Mafanikio',

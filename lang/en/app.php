@@ -55,8 +55,14 @@ return [
     'no_results' => 'No results found',
     'actions' => 'Actions',
     'form' => 'Form',
-
-    // Status
+    'name' => 'Name',
+    'phone' => 'Phone',
+    'email' => 'Email',
+    'address' => 'Address',
+    'contact' => 'Contact',
+    'total_debt' => 'Total Debt',
+    'total_amount' => 'Total Amount',
+    'products' => 'Products',
     'active' => 'Active',
     'inactive' => 'Inactive',
     'success' => 'Success',

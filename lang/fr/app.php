@@ -58,7 +58,13 @@ return [
     'no_results' => 'Aucun résultat',
     'actions' => 'Actions',
     'form' => 'Formulaire',
-
+    'name' => 'Nom',
+    'phone' => 'Téléphone',
+    'email' => 'Email',
+    'address' => 'Adresse',
+    'contact' => 'Contact',
+    'total_debt' => 'Dette Totale',
+    'total_amount' => 'Montant Total',
     // Status
     'active' => 'Actif',
     'inactive' => 'Inactif',
