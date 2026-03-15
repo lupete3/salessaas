@@ -1,0 +1,35 @@
+<?php
+
+return [
+    'title' => 'Fedha',
+    'expenses' => 'Matumizi',
+    'journal' => 'Jarida la Pesa',
+    'report' => 'Ripoti ya Kifedha',
+    'add_expense' => 'Matumizi Mpya',
+    'category' => 'Kundi',
+    'amount' => 'Kiasi',
+    'date' => 'Tarehe',
+    'description' => 'Maelezo / Sababu',
+    'reference' => 'Kumbukumbu / Vocha N°',
+    'categories' => [
+        'loyer' => 'Kodi ya Nyumba',
+        'electricite' => 'Umeme / Maji',
+        'salaires' => 'Mishahara',
+        'taxes' => 'Kodi na Tozo',
+        'fournitures' => 'Vifaa vya Ofisi',
+        'maintenance' => 'Matengenezo',
+        'autre' => 'Nyingine',
+    ],
+    'income' => 'Mapato',
+    'expenses_total' => 'Jumla ya Matumizi',
+    'net_balance' => 'Salio Halisi',
+    'cash_on_hand' => 'Pesa Iliyopo',
+    'delete_confirm' => 'Je, una uhakika unataka kufuta matumizi haya?',
+    'payment_methods' => [
+        'cash' => 'Pesa taslimu',
+        'mobile_money' => 'Fedha ya Simu',
+        'bank' => 'Benki',
+    ],
+    'expense_saved' => 'Gharama imehifadhiwa.',
+    'expense_deleted' => 'Gharama imefutwa.',
+];

@@ -1,0 +1,35 @@
+<?php
+
+return [
+    'title' => 'Finances',
+    'expenses' => 'Expenses',
+    'journal' => 'Cash Journal',
+    'report' => 'Financial Report',
+    'add_expense' => 'New Expense',
+    'category' => 'Category',
+    'amount' => 'Amount',
+    'date' => 'Date',
+    'description' => 'Description / Reason',
+    'reference' => 'Reference / Voucher N°',
+    'categories' => [
+        'loyer' => 'Rent',
+        'electricite' => 'Electricity / Water',
+        'salaires' => 'Salaries',
+        'taxes' => 'Taxes & Fees',
+        'fournitures' => 'Office Supplies',
+        'maintenance' => 'Maintenance / Repair',
+        'autre' => 'Other',
+    ],
+    'income' => 'Income',
+    'expenses_total' => 'Total Expenses',
+    'net_balance' => 'Net Balance',
+    'cash_on_hand' => 'Current Cash',
+    'delete_confirm' => 'Are you sure you want to delete this expense?',
+    'payment_methods' => [
+        'cash' => 'Cash',
+        'mobile_money' => 'Mobile Money',
+        'bank' => 'Bank',
+    ],
+    'expense_saved' => 'Expense saved.',
+    'expense_deleted' => 'Expense deleted.',
+];

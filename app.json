@@ -1,0 +1,12 @@
+{
+  "expo": {
+    "extra": {
+      "eas": {
+        "projectId": "53a4e1a7-ed23-42a7-bdd0-5eb42dd338bd"
+      }
+    },
+    "android": {
+      "package": "com.lupet.livewirestarterkit"
+    }
+  }
+}

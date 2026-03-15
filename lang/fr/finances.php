@@ -1,0 +1,35 @@
+<?php
+
+return [
+    'title' => 'Finances',
+    'expenses' => 'Dépenses',
+    'journal' => 'Journal de caisse',
+    'report' => 'Rapport financier',
+    'add_expense' => 'Nouvelle dépense',
+    'category' => 'Catégorie',
+    'amount' => 'Montant',
+    'date' => 'Date',
+    'description' => 'Description / Motif',
+    'reference' => 'Référence / N° Pièce',
+    'categories' => [
+        'loyer' => 'Loyer',
+        'electricite' => 'Électricité / Eau',
+        'salaires' => 'Salaires',
+        'taxes' => 'Taxes & Impôts',
+        'fournitures' => 'Fournitures de bureau',
+        'maintenance' => 'Maintenance / Réparation',
+        'autre' => 'Autre',
+    ],
+    'income' => 'Recettes',
+    'expenses_total' => 'Total Dépenses',
+    'net_balance' => 'Solde Net',
+    'cash_on_hand' => 'Caisse actuelle',
+    'delete_confirm' => 'Êtes-vous sûr de vouloir supprimer cette dépense ?',
+    'payment_methods' => [
+        'cash' => 'Espèces',
+        'mobile_money' => 'Mobile Money',
+        'bank' => 'Banque',
+    ],
+    'expense_saved' => 'Dépense enregistrée.',
+    'expense_deleted' => 'Dépense supprimée.',
+];
