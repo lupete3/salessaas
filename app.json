@@ -1,25 +1,27 @@
 {
   "expo": {
-    "name": "offlineTest",
-    "slug": "offlineTest",
+    "name": "SalesSaaS",
+    "slug": "salessaas",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "offlinetest",
-    "userInterfaceStyle": "automatic",
+    "scheme": "salessaas",
+    "userInterfaceStyle": "dark",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.uici.salessaas"
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
+        "backgroundColor": "#004d40",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.uici.salessaas"
     },
     "web": {
       "output": "static",
@@ -33,16 +35,24 @@
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 200,
           "resizeMode": "contain",
-          "backgroundColor": "#ffffff",
+          "backgroundColor": "#004d40",
           "dark": {
-            "backgroundColor": "#000000"
+            "backgroundColor": "#00241e"
           }
         }
-      ]
+      ],
+      "expo-font"
     ],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "337c9474-0901-4eb4-b601-9a9708937fe7"
+      }
+    },
+    "owner": "lupet"
   }
 }

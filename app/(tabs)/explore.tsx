@@ -1,112 +1,141 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+import React, { useState, useMemo } from 'react';
+import {
+  View, Text, FlatList, TextInput, TouchableOpacity,
+  StyleSheet, SafeAreaView,
+} from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { useAppStore, Product } from '../../store/appStore';
+import { useAuthStore } from '../../store/authStore';
 
-import { Collapsible } from '@/components/ui/collapsible';
-import { ExternalLink } from '@/components/external-link';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { IconSymbol } from '@/components/ui/icon-symbol';
-import { Fonts } from '@/constants/theme';
+export default function ProductsScreen() {
+  const { products } = useAppStore();
+  const { store } = useAuthStore();
+  const currency = 'CDF'; // Simplified or use store.currency if added
+  const [search, setSearch] = useState('');
+  const [filter, setFilter] = useState<'all' | 'low' | 'out'>('all');
 
-export default function TabTwoScreen() {
+  const filtered = useMemo(() => {
+    let list = products.filter((p) =>
+      p.name.toLowerCase().includes(search.toLowerCase()) ||
+      (p.barcode ?? '').includes(search)
+    );
+    if (filter === 'low')  list = list.filter((p) => p.stock > 0 && p.stock <= p.min_stock);
+    if (filter === 'out')  list = list.filter((p) => p.stock <= 0);
+    return list.sort((a, b) => a.name.localeCompare(b.name));
+  }, [products, search, filter]);
+
+  const stockColor = (qty: number, minQty: number) => {
+    if (qty <= 0)  return '#e74c3c';
+    if (qty <= minQty)  return '#f39c12';
+    return '#2ecc71';
+  };
+
+  const renderItem = ({ item }: { item: Product }) => (
+    <View style={styles.card}>
+      <View style={styles.cardLeft}>
+        <Text style={styles.name} numberOfLines={2}>{item.name}</Text>
+        {item.description ? <Text style={styles.sci}>{item.description}</Text> : null}
+        <View style={styles.tags}>
+        </View>
+      </View>
+      <View style={styles.cardRight}>
+        <Text style={styles.price}>{parseFloat(item.selling_price).toFixed(2)} {currency}</Text>
+        <View style={[styles.stockBadge, { backgroundColor: stockColor(item.stock, item.min_stock) + '22' }]}>
+          <Text style={[styles.stockText, { color: stockColor(item.stock, item.min_stock) }]}>
+            {item.stock} {item.unit}
+          </Text>
+        </View>
+      </View>
+    </View>
+  );
+
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#D0D0D0', dark: '#353636' }}
-      headerImage={
-        <IconSymbol
-          size={310}
-          color="#808080"
-          name="chevron.left.forwardslash.chevron.right"
-          style={styles.headerImage}
+    <SafeAreaView style={styles.container}>
+      {/* Search */}
+      <View style={styles.searchRow}>
+        <Ionicons name="search-outline" size={18} color="#888" style={{ marginRight: 8 }} />
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Nom, code-barre..."
+          placeholderTextColor="#666"
+          value={search}
+          onChangeText={setSearch}
         />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText
-          type="title"
-          style={{
-            fontFamily: Fonts.rounded,
-          }}>
-          Explore
-        </ThemedText>
-      </ThemedView>
-      <ThemedText>This app includes example code to help you get started.</ThemedText>
-      <Collapsible title="File-based routing">
-        <ThemedText>
-          This app has two screens:{' '}
-          <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> and{' '}
-          <ThemedText type="defaultSemiBold">app/(tabs)/explore.tsx</ThemedText>
-        </ThemedText>
-        <ThemedText>
-          The layout file in <ThemedText type="defaultSemiBold">app/(tabs)/_layout.tsx</ThemedText>{' '}
-          sets up the tab navigator.
-        </ThemedText>
-        <ExternalLink href="https://docs.expo.dev/router/introduction">
-          <ThemedText type="link">Learn more</ThemedText>
-        </ExternalLink>
-      </Collapsible>
-      <Collapsible title="Android, iOS, and web support">
-        <ThemedText>
-          You can open this project on Android, iOS, and the web. To open the web version, press{' '}
-          <ThemedText type="defaultSemiBold">w</ThemedText> in the terminal running this project.
-        </ThemedText>
-      </Collapsible>
-      <Collapsible title="Images">
-        <ThemedText>
-          For static images, you can use the <ThemedText type="defaultSemiBold">@2x</ThemedText> and{' '}
-          <ThemedText type="defaultSemiBold">@3x</ThemedText> suffixes to provide files for
-          different screen densities
-        </ThemedText>
-        <Image
-          source={require('@/assets/images/react-logo.png')}
-          style={{ width: 100, height: 100, alignSelf: 'center' }}
-        />
-        <ExternalLink href="https://reactnative.dev/docs/images">
-          <ThemedText type="link">Learn more</ThemedText>
-        </ExternalLink>
-      </Collapsible>
-      <Collapsible title="Light and dark mode components">
-        <ThemedText>
-          This template has light and dark mode support. The{' '}
-          <ThemedText type="defaultSemiBold">useColorScheme()</ThemedText> hook lets you inspect
-          what the user&apos;s current color scheme is, and so you can adjust UI colors accordingly.
-        </ThemedText>
-        <ExternalLink href="https://docs.expo.dev/develop/user-interface/color-themes/">
-          <ThemedText type="link">Learn more</ThemedText>
-        </ExternalLink>
-      </Collapsible>
-      <Collapsible title="Animations">
-        <ThemedText>
-          This template includes an example of an animated component. The{' '}
-          <ThemedText type="defaultSemiBold">components/HelloWave.tsx</ThemedText> component uses
-          the powerful{' '}
-          <ThemedText type="defaultSemiBold" style={{ fontFamily: Fonts.mono }}>
-            react-native-reanimated
-          </ThemedText>{' '}
-          library to create a waving hand animation.
-        </ThemedText>
-        {Platform.select({
-          ios: (
-            <ThemedText>
-              The <ThemedText type="defaultSemiBold">components/ParallaxScrollView.tsx</ThemedText>{' '}
-              component provides a parallax effect for the header image.
-            </ThemedText>
-          ),
-        })}
-      </Collapsible>
-    </ParallaxScrollView>
+      </View>
+
+      {/* Filters */}
+      <View style={styles.filterRow}>
+        {(['all', 'low', 'out'] as const).map((f) => (
+          <TouchableOpacity
+            key={f}
+            style={[styles.filterBtn, filter === f && styles.filterBtnActive]}
+            onPress={() => setFilter(f)}
+          >
+            <Text style={[styles.filterText, filter === f && styles.filterTextActive]}>
+              {f === 'all' ? '📦 Tous' : f === 'low' ? '⚠️ Stock faible' : '🚫 Rupture'}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+
+      {/* Stats */}
+      <View style={styles.statsRow}>
+        <Text style={styles.statsText}>{filtered.length} produit(s)</Text>
+        <Text style={styles.statsText}>
+          {products.filter(p => p.stock <= 0).length} rupture(s)
+        </Text>
+      </View>
+
+      <FlatList
+        data={filtered}
+        keyExtractor={(p) => String(p.id)}
+        renderItem={renderItem}
+        ListEmptyComponent={<Text style={styles.empty}>Aucun produit trouvé.</Text>}
+        contentContainerStyle={{ paddingBottom: 20 }}
+      />
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  headerImage: {
-    color: '#808080',
-    bottom: -90,
-    left: -35,
-    position: 'absolute',
+  container: { flex: 1, backgroundColor: '#0d1117' },
+  searchRow: {
+    flexDirection: 'row', alignItems: 'center',
+    backgroundColor: '#161b22', margin: 12, borderRadius: 10,
+    paddingHorizontal: 12, paddingVertical: 10,
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)',
   },
-  titleContainer: {
-    flexDirection: 'row',
-    gap: 8,
+  searchInput: { flex: 1, color: '#fff', fontSize: 15 },
+  filterRow: { flexDirection: 'row', paddingHorizontal: 12, gap: 8, marginBottom: 8 },
+  filterBtn: {
+    paddingHorizontal: 12, paddingVertical: 7, borderRadius: 20,
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.15)',
   },
+  filterBtnActive: { backgroundColor: '#10b981', borderColor: '#10b981' },
+  filterText: { color: '#888', fontSize: 12 },
+  filterTextActive: { color: '#fff', fontWeight: 'bold' },
+  statsRow: {
+    flexDirection: 'row', justifyContent: 'space-between',
+    paddingHorizontal: 16, marginBottom: 8,
+  },
+  statsText: { color: '#666', fontSize: 12 },
+  card: {
+    flexDirection: 'row', backgroundColor: '#161b22',
+    marginHorizontal: 12, marginVertical: 5, borderRadius: 12,
+    padding: 14, borderWidth: 1, borderColor: 'rgba(255,255,255,0.07)',
+  },
+  cardLeft: { flex: 1 },
+  cardRight: { alignItems: 'flex-end', justifyContent: 'space-between', minWidth: 80 },
+  name: { color: '#fff', fontWeight: '600', fontSize: 14, marginBottom: 2 },
+  sci: { color: '#888', fontSize: 11, fontStyle: 'italic', marginBottom: 4 },
+  tags: { flexDirection: 'row', flexWrap: 'wrap', gap: 4 },
+  tag: {
+    backgroundColor: 'rgba(16,185,129,0.15)', color: '#6ee7b7',
+    fontSize: 11, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4,
+  },
+  tagRx: { backgroundColor: 'rgba(231,76,60,0.15)', color: '#e74c3c' },
+  price: { color: '#10b981', fontWeight: 'bold', fontSize: 15, marginBottom: 6 },
+  stockBadge: { borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3 },
+  stockText: { fontWeight: '700', fontSize: 12 },
+  empty: { color: '#666', textAlign: 'center', marginTop: 60, fontSize: 15 },
 });
