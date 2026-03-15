@@ -49,6 +49,11 @@ class ApiController extends Controller
                 'id' => $user->store->id,
                 'name' => $user->store->name,
                 'currency' => $user->store->currency,
+                'address' => $user->store->address,
+                'phone' => $user->store->phone,
+                'email' => $user->store->email,
+                'logo' => $user->store->logo,
+                'license_number' => $user->store->license_number,
             ] : null,
         ]);
     }
