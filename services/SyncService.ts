@@ -79,6 +79,12 @@ export const SyncService = {
       if (cRes.data.debt_payments) {
         useAppStore.getState().setDebtPayments(cRes.data.debt_payments);
       }
+
+      const sRes = await apiClient().get('/sales');
+      useAppStore.getState().setSyncedSales(sRes.data.sales);
+
+      const eRes = await apiClient().get('/expenses');
+      useAppStore.getState().setExpenses(eRes.data.expenses);
       
       useAppStore.getState().setLastSyncAt(new Date().toISOString());
       console.log(`✅ Données synchronisées.`);

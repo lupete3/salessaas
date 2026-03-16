@@ -102,6 +102,7 @@ interface AppState {
   markCustomersSynced: (ids: { local_id: string; uuid: string }[]) => void;
 
   // Expenses
+  setExpenses: (expenses: Expense[]) => void;
   addExpense: (expense: Expense) => void;
   markExpensesSynced: (localIds: string[]) => void;
 
@@ -123,6 +124,7 @@ interface AppState {
   markSalesSynced: (results: { local_id: string; server_id: number }[]) => void;
   clearQueue: () => void;
   markCancelledSalesSynced: (localIds: string[]) => void;
+  setSyncedSales: (sales: LocalSale[]) => void;
   setLastSyncAt: (dt: string) => void;
 }
 
@@ -193,6 +195,13 @@ export const useAppStore = create<AppState>()(
       },
 
       // ── Expenses ─────────────────────────────────────────────────────────────
+      setExpenses: (serverExpenses) => {
+        const { expenses } = get();
+        const unsynced = expenses.filter(e => !e.is_synced);
+        const incomingIds = new Set(serverExpenses.map(e => e.local_id));
+        const filteredUnsynced = unsynced.filter(e => !incomingIds.has(e.local_id));
+        set({ expenses: [...serverExpenses, ...filteredUnsynced] });
+      },
       addExpense: (expense) => set({ expenses: [...get().expenses, expense] }),
       markExpensesSynced: (localIds) => {
         const idSet = new Set(localIds);
@@ -379,6 +388,14 @@ export const useAppStore = create<AppState>()(
         set({
           cancelledSales: get().cancelledSales.filter(id => !idSet.has(id))
         });
+      },
+
+      setSyncedSales: (sales) => {
+        const { offlineQueue } = get();
+        const pendingIds = new Set(offlineQueue.map(s => s.local_id));
+        const filteredServerSales = sales.filter(s => !pendingIds.has(s.local_id));
+        
+        set({ syncedSales: filteredServerSales });
       },
 
       setLastSyncAt: (dt) => set({ lastSyncAt: dt }),
