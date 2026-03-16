@@ -1,7 +1,11 @@
 <div>
     <div class="row g-4 mb-4">
+        @php
+            $financials = auth()->user()->canViewFinancials();
+            $colClass = $financials ? 'col-md-3' : 'col-md-4';
+        @endphp
         <!-- Sales Today -->
-        <div class="col-md-3">
+        <div class="{{ $colClass }}">
             <div class="stat-card bg-primary">
                 <i class="bi bi-cash-coin stat-icon"></i>
                 <p>{{ __('pos.sales_today') }}</p>
@@ -10,7 +14,7 @@
             </div>
         </div>
         <!-- Low Stock -->
-        <div class="col-md-3">
+        <div class="{{ $colClass }}">
             <div class="stat-card" style="background: #ffab00;">
                 <i class="bi bi-exclamation-triangle stat-icon"></i>
                 <p>{{ __('app.stock_alerts') }}</p>
@@ -23,7 +27,7 @@
             </div>
         </div>
         <!-- Expiring Soon -->
-        <div class="col-md-3">
+        <div class="{{ $colClass }}">
             <div class="stat-card" style="background: #ff3e1d;">
                 <i class="bi bi-clock-history stat-icon"></i>
                 <p>{{ __('products.expiring_soon') }}</p>
@@ -31,15 +35,17 @@
                 <small>{{ __('app.next_30_days') }}</small>
             </div>
         </div>
-        <!-- Monthly Profit -->
-        <div class="col-md-3">
-            <div class="stat-card" style="background: #71dd37;">
-                <i class="bi bi-graph-up-arrow stat-icon"></i>
-                <p>{{ __('app.monthly_profit') }}</p>
-                <h3>{{ number_format($estimatedProfit, 2) }} {{ $currency }}</h3>
-                <small>CA: {{ number_format($monthSales, 0) }} | Exp: {{ number_format($monthExpenses, 0) }}</small>
+        @if($financials)
+            <!-- Monthly Profit -->
+            <div class="col-md-3">
+                <div class="stat-card" style="background: #71dd37;">
+                    <i class="bi bi-graph-up-arrow stat-icon"></i>
+                    <p>{{ __('app.monthly_profit') }}</p>
+                    <h3>{{ number_format($estimatedProfit, 2) }} {{ $currency }}</h3>
+                    <small>CA: {{ number_format($monthSales, 0) }} | Exp: {{ number_format($monthExpenses, 0) }}</small>
+                </div>
             </div>
-        </div>
+        @endif
     </div>
 
     <div class="row g-4">

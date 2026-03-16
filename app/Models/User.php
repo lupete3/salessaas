@@ -101,6 +101,24 @@ class User extends Authenticatable
         return in_array($this->role?->slug, [Role::OWNER, Role::MANAGER]);
     }
 
+    public function canEdit(): bool
+    {
+        // Sellers cannot edit anything
+        return !$this->isSeller();
+    }
+
+    public function canDelete(): bool
+    {
+        // Sellers cannot delete anything
+        return !$this->isSeller();
+    }
+
+    public function canViewFinancials(): bool
+    {
+        // Sellers cannot view financial benefits/profits
+        return !$this->isSeller();
+    }
+
     public function storeId(): ?int
     {
         return $this->store_id;

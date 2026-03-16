@@ -124,9 +124,13 @@
                 <th>{{ __('reports.category') }}</th>
                 <th>{{ __('reports.supplier') }}</th>
                 <th class="text-right">{{ __('reports.current_stock') }}</th>
-                <th class="text-right">{{ __('reports.purchase_price_unit') }}</th>
+                @if(!$hidePurchasePrice)
+                    <th class="text-right">{{ __('reports.purchase_price_unit') }}</th>
+                @endif
                 <th class="text-right">{{ __('reports.selling_price_unit') }}</th>
-                <th class="text-right">{{ __('reports.stock_value_pa') }}</th>
+                @if(!$hidePurchasePrice)
+                    <th class="text-right">{{ __('reports.stock_value_pa') }}</th>
+                @endif
             </tr>
         </thead>
         <tbody>
@@ -143,9 +147,13 @@
                     <td>{{ $m->category }}</td>
                     <td>{{ $m->supplier?->name ?? '—' }}</td>
                     <td class="text-right">{{ $m->stock_quantity }} {{ $m->unit }}</td>
-                    <td class="text-right">{{ number_format($m->purchase_price, 2, ',', ' ') }}</td>
+                    @if(!$hidePurchasePrice)
+                        <td class="text-right">{{ number_format($m->purchase_price, 2, ',', ' ') }}</td>
+                    @endif
                     <td class="text-right">{{ number_format($m->selling_price, 2, ',', ' ') }}</td>
-                    <td class="text-right">{{ number_format($m->stock_quantity * $m->purchase_price, 2, ',', ' ') }}</td>
+                    @if(!$hidePurchasePrice)
+                        <td class="text-right">{{ number_format($m->stock_quantity * $m->purchase_price, 2, ',', ' ') }}</td>
+                    @endif
                 </tr>
             @endforeach
         </tbody>
@@ -155,8 +163,12 @@
         <table style="width: 100%;">
             <tr>
                 <td><strong>{{ __('reports.item_count') }} :</strong> {{ $products->count() }}</td>
-                <td class="text-right"><strong>{{ __('reports.total_value_purchase') }} :</strong>
-                    {{ number_format($totalPurchaseValue, 2, ',', ' ') }} {{ $currency }}</td>
+                <td class="text-right">
+                    @if(!$hidePurchasePrice)
+                        <strong>{{ __('reports.total_value_purchase') }} :</strong>
+                        {{ number_format($totalPurchaseValue, 2, ',', ' ') }} {{ $currency }}
+                    @endif
+                </td>
             </tr>
             <tr>
                 <td></td>

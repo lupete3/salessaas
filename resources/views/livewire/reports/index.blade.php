@@ -39,7 +39,9 @@
                         <h5 class="fw-bold mb-0">{{ __('reports.stock_report') }}</h5>
                     </div>
                     <p class="text-muted small">
-                        {{ __('reports.stock_report_desc') ?? 'Inventaire complet incluant les quantités actuelles, les prix d\'achat/vente et la valeur totale du stock.' }}
+                        {{ auth()->user()->canViewFinancials() 
+                            ? (__('reports.stock_report_desc') ?? 'Inventaire complet incluant les quantités actuelles, les prix d\'achat/vente et la valeur totale du stock.')
+                            : 'Inventaire complet incluant les quantités actuelles. (Valeurs financières masquées)' }}
                     </p>
                     <div class="mt-4 pt-2">
                         <button wire:click="exportStockReport" wire:loading.attr="disabled"
@@ -96,6 +98,7 @@
             </div>
         </div>
 
+        @if(auth()->user()->canViewFinancials())
         <!-- Purchases Report Card -->
         <div class="col-md-6 col-lg-4">
             <div class="card h-100 shadow-sm border-0 border-top border-4 border-warning transition-hover">
@@ -147,7 +150,9 @@
                 </div>
             </div>
         </div>
+        @endif
 
+        @if(auth()->user()->canViewFinancials())
         <!-- Finances Summary Card -->
         <div class="col-md-6 col-lg-4">
             <div class="card h-100 shadow-sm border-0 border-top border-4 border-danger transition-hover">
@@ -180,6 +185,7 @@
                 </div>
             </div>
         </div>
+        @endif
         <!-- Customers Report Card -->
         <div class="col-md-6 col-lg-4">
             <div class="card h-100 shadow-sm border-0 border-top border-4 border-primary transition-hover">
@@ -209,6 +215,7 @@
             </div>
         </div>
 
+        @if(auth()->user()->canViewFinancials())
         <!-- Suppliers Report Card -->
         <div class="col-md-6 col-lg-4">
             <div class="card h-100 shadow-sm border-0 border-top border-4 border-secondary transition-hover">
@@ -237,7 +244,9 @@
                 </div>
             </div>
         </div>
+        @endif
 
+        @if(auth()->user()->canViewFinancials())
         <!-- Customer Debts Report Card -->
         <div class="col-md-6 col-lg-4">
             <div class="card h-100 shadow-sm border-0 border-top border-4 border-danger transition-hover">
@@ -266,6 +275,7 @@
                 </div>
             </div>
         </div>
+        @endif
 
         <!-- Payments Report Card -->
         <div class="col-md-6 col-lg-4">
@@ -347,6 +357,7 @@
             </div>
         </div>
 
+        @if(auth()->user()->canViewFinancials())
         <!-- Inventories Report Card -->
         <div class="col-md-6 col-lg-4">
             <div class="card h-100 shadow-sm border-0 border-top border-4 border-info transition-hover">
@@ -415,6 +426,7 @@
                 </div>
             </div>
         </div>
+        @endif
     </div>
 
     <style>

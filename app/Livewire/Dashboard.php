@@ -24,16 +24,21 @@ class Dashboard extends Component
     {
         $storeId = auth()->user()->store_id;
 
-        // Ventes du jour
-        $todaySales = Sale::forStore($storeId)
-            ->completed()
-            ->today()
-            ->sum('final_amount');
+        $user = auth()->user();
+        $isSeller = $user->isSeller();
 
-        $todaySalesCount = Sale::forStore($storeId)
-            ->completed()
-            ->today()
-            ->count();
+        // Ventes du jour
+        $todaySalesQuery = Sale::forStore($storeId)->completed()->today();
+        if ($isSeller) {
+            $todaySalesQuery->where('user_id', $user->id);
+        }
+        $todaySales = $todaySalesQuery->sum('final_amount');
+
+        $todaySalesCountQuery = Sale::forStore($storeId)->completed()->today();
+        if ($isSeller) {
+            $todaySalesCountQuery->where('user_id', $user->id);
+        }
+        $todaySalesCount = $todaySalesCountQuery->count();
 
         // Stock critique
         $lowStockCount = Product::forStore($storeId)
@@ -53,30 +58,39 @@ class Dashboard extends Component
             ->count();
 
         // Dépenses du mois
-        $monthExpenses = Expense::forStore($storeId)
+        $monthExpensesQuery = Expense::forStore($storeId)
             ->whereMonth('expense_date', now()->month)
-            ->whereYear('expense_date', now()->year)
-            ->sum('amount');
+            ->whereYear('expense_date', now()->year);
+        if ($isSeller) {
+            $monthExpensesQuery->where('user_id', $user->id);
+        }
+        $monthExpenses = $monthExpensesQuery->sum('amount');
 
         // CA du mois
-        $monthSales = Sale::forStore($storeId)
+        $monthSalesQuery = Sale::forStore($storeId)
             ->completed()
             ->whereMonth('created_at', now()->month)
-            ->whereYear('created_at', now()->year)
-            ->sum('final_amount');
+            ->whereYear('created_at', now()->year);
+        if ($isSeller) {
+            $monthSalesQuery->where('user_id', $user->id);
+        }
+        $monthSales = $monthSalesQuery->sum('final_amount');
 
         // Profit estimé du mois (ventes - achats - dépenses)
         $estimatedProfit = $monthSales - $monthExpenses;
 
         // Graphique : ventes 7 derniers jours
-        $salesChart = collect(range(6, 0))->map(function ($daysAgo) use ($storeId) {
+        $salesChart = collect(range(6, 0))->map(function ($daysAgo) use ($storeId, $isSeller, $user) {
             $date = now()->subDays($daysAgo);
+            $query = Sale::forStore($storeId)
+                ->completed()
+                ->whereDate('created_at', $date);
+            if ($isSeller) {
+                $query->where('user_id', $user->id);
+            }
             return [
                 'label' => $date->translatedFormat('d/m'),
-                'value' => Sale::forStore($storeId)
-                    ->completed()
-                    ->whereDate('created_at', $date)
-                    ->sum('final_amount'),
+                'value' => $query->sum('final_amount'),
             ];
         });
 

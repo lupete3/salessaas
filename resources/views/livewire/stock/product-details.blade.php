@@ -27,10 +27,12 @@
                             {{ $product->supplier?->name ?? '-' }}</li>
                         <li class="mb-2"><strong>{{ __('products.unit') ?? 'Unité' }} :</strong>
                             {{ $product->unit ?? '-' }}</li>
-                        <li class="mb-2">
-                            <strong>{{ __('products.purchase_price') ?? 'Prix d\'Achat' }} :</strong>
-                            {{ number_format($product->purchase_price, 2, ',', ' ') }} {{ $currency }}
-                        </li>
+                        @if(auth()->user()->canViewFinancials())
+                            <li class="mb-2">
+                                <strong>{{ __('products.purchase_price') ?? 'Prix d\'Achat' }} :</strong>
+                                {{ number_format($product->purchase_price, 2, ',', ' ') }} {{ $currency }}
+                            </li>
+                        @endif
                         <li>
                             <strong>{{ __('products.selling_price') ?? 'Prix de Vente' }} :</strong>
                             {{ number_format($product->selling_price, 2, ',', ' ') }} {{ $currency }}

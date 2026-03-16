@@ -152,18 +152,22 @@
                                     <button class="btn btn-sm btn-icon p-0" data-bs-toggle="dropdown"><i
                                             class="bi bi-three-dots-vertical"></i></button>
                                     <ul class="dropdown-menu dropdown-menu-end">
-                                        <li><a class="dropdown-item" href="{{ route('products.edit', $product->id) }}"><i
-                                                    class="bi bi-pencil me-2"></i>{{ __('app.edit') }}</a></li>
+                                        @if(auth()->user()->canEdit())
+                                            <li><a class="dropdown-item" href="{{ route('products.edit', $product->id) }}"><i
+                                                        class="bi bi-pencil me-2"></i>{{ __('app.edit') }}</a></li>
+                                        @endif
                                         <li><a class="dropdown-item"
                                                 href="{{ route('stock.products.details', $product->id) }}"><i
                                                     class="bi bi-eye me-2"></i>{{ __('Détails & Mouvements') }}</a>
                                         </li>
-                                        <li>
-                                            <hr class="dropdown-divider">
-                                        </li>
-                                        <li><button type="button" class="dropdown-item text-danger"
-                                                wire:click="confirmDelete({{ $product->id }})"><i
-                                                    class="bi bi-trash me-2"></i>{{ __('app.delete') }}</button></li>
+                                        @if(auth()->user()->canDelete())
+                                            <li>
+                                                <hr class="dropdown-divider">
+                                            </li>
+                                            <li><button type="button" class="dropdown-item text-danger"
+                                                    wire:click="confirmDelete({{ $product->id }})"><i
+                                                        class="bi bi-trash me-2"></i>{{ __('app.delete') }}</button></li>
+                                        @endif
                                     </ul>
                                 </div>
                             </td>

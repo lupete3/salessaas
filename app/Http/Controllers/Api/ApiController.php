@@ -141,6 +141,67 @@ class ApiController extends Controller
         ]);
     }
 
+    public function getExpenses(Request $request)
+    {
+        $user = $request->user();
+        $expenses = Expense::where('store_id', $user->store_id)
+            ->latest()
+            ->limit(100)
+            ->get()
+            ->map(function ($e) {
+                return [
+                    'local_id' => $e->uuid,
+                    'amount' => (float) $e->amount,
+                    'description' => $e->description,
+                    'category' => $e->category,
+                    'spent_at' => is_string($e->expense_date) ? $e->expense_date : $e->expense_date->toISOString(),
+                    'is_synced' => true,
+                ];
+            });
+
+        return response()->json(['expenses' => $expenses]);
+    }
+
+    public function getSales(Request $request)
+    {
+        $user = $request->user();
+        $sales = Sale::where('store_id', $user->store_id)
+            ->with(['items.product', 'customer'])
+            ->latest()
+            ->limit(100)
+            ->get()
+            ->map(function ($s) {
+                return [
+                    'local_id' => $s->uuid,
+                    'server_id' => $s->id,
+                    'sold_at' => $s->created_at->toIso8601String(),
+                    'payment_method' => $s->payment_method,
+                    'customer_uuid' => $s->customer?->uuid,
+                    'customer_name' => $s->customer?->name,
+                    'customer_phone' => $s->customer?->phone,
+                    'notes' => $s->notes ?? '',
+                    'discount' => (float) $s->discount,
+                    'amount_paid' => (float) $s->amount_paid,
+                    'change_given' => (float) $s->change_given,
+                    'total_amount' => (float) $s->total_amount,
+                    'final_amount' => (float) $s->final_amount,
+                    'is_synced' => true,
+                    'items' => $s->items->map(function ($i) {
+                        return [
+                            'product_id' => $i->product_id,
+                            'product_name' => $i->product?->name ?? 'Produit Inconnu',
+                            'quantity' => $i->quantity,
+                            'unit_price' => (float) $i->unit_price,
+                            'discount' => 0,
+                            'subtotal' => (float) $i->subtotal,
+                        ];
+                    })
+                ];
+            });
+
+        return response()->json(['sales' => $sales]);
+    }
+
     public function sync(Request $request)
     {
         $user = $request->user();

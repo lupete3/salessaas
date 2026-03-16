@@ -10,12 +10,17 @@
             </nav>
         </div>
         <div class="d-flex gap-2">
-            <div class="input-group">
+            <div class="input-group shadow-sm">
                 <span class="input-group-text bg-white border-end-0"><i class="bi bi-search"></i></span>
                 <input type="text" class="form-control border-start-0" placeholder="{{ __('app.search') }}..."
                     wire:model.live.debounce.300ms="search">
             </div>
-            <a href="{{ route('pos.sale') }}" class="btn btn-primary d-flex align-items-center gap-2">
+            <select class="form-select shadow-sm" wire:model.live="filterStatus" style="width: 150px;">
+                <option value="">{{ __('app.all_states') ?? 'Tous les états' }}</option>
+                <option value="completed">{{ __('app.success') }}</option>
+                <option value="cancelled">{{ __('app.cancelled') ?? 'Annulée' }}</option>
+            </select>
+            <a href="{{ route('pos.sale') }}" class="btn btn-primary d-flex align-items-center gap-2 shadow-sm">
                 <i class="bi bi-plus-circle"></i> <span class="d-none d-md-inline">{{ __('pos.quick_sale') }}</span>
             </a>
         </div>
@@ -59,6 +64,10 @@
                                     <span class="badge bg-success bg-opacity-10 text-success px-2 py-1 rounded-pill">
                                         <i class="bi bi-check-circle me-1"></i>{{ __('app.success') }}
                                     </span>
+                                @elseif($sale->status === 'cancelled')
+                                    <span class="badge bg-danger bg-opacity-10 text-danger px-2 py-1 rounded-pill">
+                                        <i class="bi bi-x-circle me-1"></i>{{ __('app.cancelled') ?? 'Annulée' }}
+                                    </span>
                                 @else
                                     <span class="badge bg-secondary bg-opacity-10 text-secondary px-2 py-1 rounded-pill">
                                         {{ $sale->status }}
@@ -71,6 +80,18 @@
                                         class="btn btn-sm btn-outline-primary" title="{{ __('app.print') }}">
                                         <i class="bi bi-printer"></i>
                                     </a>
+                                    @if($sale->status !== 'cancelled')
+                                        @php
+                                            $canCancel = !auth()->user()->isSeller() || $sale->created_at->diffInHours(now()) <= 24;
+                                        @endphp
+                                        @if($canCancel)
+                                            <button wire:click="cancelSale({{ $sale->id }})"
+                                                wire:confirm="{{ __('app.confirm_action') ?? 'Êtes-vous sûr ?' }}"
+                                                class="btn btn-sm btn-outline-danger" title="{{ __('app.cancel') }}">
+                                                <i class="bi bi-x-circle"></i>
+                                            </button>
+                                        @endif
+                                    @endif
                                 </div>
                             </td>
                         </tr>

@@ -59,6 +59,11 @@ class Form extends Component
     public function mount(?Product $product = null): void
     {
         if ($product && $product->exists) {
+            if (!auth()->user()->canEdit()) {
+                session()->flash('error', __('app.unauthorized'));
+                $this->redirect(route('products.index'));
+                return;
+            }
             $this->product = $product;
             $this->fill($product->toArray());
             $this->supplier_id = $product->supplier_id;
@@ -67,6 +72,10 @@ class Form extends Component
 
     public function save(): void
     {
+        if ($this->product && $this->product->exists && !auth()->user()->canEdit()) {
+            session()->flash('error', __('app.unauthorized'));
+            return;
+        }
         $this->validate();
 
         /** @var \App\Models\User $user */
@@ -146,8 +155,11 @@ class Form extends Component
         $locales = ['fr' => '🇫🇷 Français', 'en' => '🇬🇧 English', 'sw' => '🇹🇿 Kiswahili'];
 
         $title = $this->product && $this->product->exists ? __('products.edit') : __('products.add_new');
+        $store = $user->store;
+        $currency = $store->currency ?: 'CDF';
 
-        return view('livewire.products.form', compact('suppliers', 'categories', 'forms', 'locales'))
+        return view('livewire.products.form', compact('suppliers', 'categories', 'forms', 'locales', 'currency', 'store'))
+            ->with(['currentStore' => $store])
             ->title($title);
     }
 }

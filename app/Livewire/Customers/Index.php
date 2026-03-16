@@ -27,12 +27,20 @@ class Index extends Component
 
     public function confirmDelete($id)
     {
+        if (!auth()->user()->canDelete()) {
+            $this->dispatch('notify', ['message' => __('app.unauthorized'), 'type' => 'error']);
+            return;
+        }
         $this->customerIdBeingDeleted = $id;
         $this->showDeleteModal = true;
     }
 
     public function delete()
     {
+        if (!auth()->user()->canDelete()) {
+            $this->dispatch('notify', ['message' => __('app.unauthorized'), 'type' => 'error']);
+            return;
+        }
         $customer = Customer::forStore(auth()->user()->store_id)->findOrFail($this->customerIdBeingDeleted);
         $customer->delete();
         $this->showDeleteModal = false;

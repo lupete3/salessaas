@@ -425,23 +425,27 @@
                         <i class="bi bi-boxes"></i>{{ __('app.stock') }}
                     </a>
                 </div>
-                <div class="sidebar-item">
-                    <a href="{{ route('stock.inventory.index') }}" @class(['active' => request()->routeIs('stock.inventory.*')])>
-                        <i class="bi bi-clipboard2-check"></i>Faire un inventaire
-                    </a>
-                </div>
+                @if(!$currentUser->isSeller())
+                    <div class="sidebar-item">
+                        <a href="{{ route('stock.inventory.index') }}" @class(['active' => request()->routeIs('stock.inventory.*')])>
+                            <i class="bi bi-clipboard2-check"></i>Faire un inventaire
+                        </a>
+                    </div>
+                @endif
 
-                <div class="sidebar-section mt-2">{{ __('app.suppliers_section') ?? 'Fournisseurs' }}</div>
-                <div class="sidebar-item">
-                    <a href="{{ route('suppliers.index') }}" @class(['active' => request()->routeIs('suppliers.*')])>
-                        <i class="bi bi-truck"></i>{{ __('app.suppliers') }}
-                    </a>
-                </div>
-                <div class="sidebar-item">
-                    <a href="{{ route('purchases.index') }}" @class(['active' => request()->routeIs('purchases.*')])>
-                        <i class="bi bi-cart3"></i>{{ __('app.purchases') }}
-                    </a>
-                </div>
+                @if(!$currentUser->isSeller())
+                    <div class="sidebar-section mt-2">{{ __('app.suppliers_section') ?? 'Fournisseurs' }}</div>
+                    <div class="sidebar-item">
+                        <a href="{{ route('suppliers.index') }}" @class(['active' => request()->routeIs('suppliers.*')])>
+                            <i class="bi bi-truck"></i>{{ __('app.suppliers') }}
+                        </a>
+                    </div>
+                    <div class="sidebar-item">
+                        <a href="{{ route('purchases.index') }}" @class(['active' => request()->routeIs('purchases.*')])>
+                            <i class="bi bi-cart3"></i>{{ __('app.purchases') }}
+                        </a>
+                    </div>
+                @endif
 
                 <div class="sidebar-section mt-2">{{ __('app.customer_section') ?? 'Clientèle' }}</div>
                 <div class="sidebar-item">
@@ -449,11 +453,13 @@
                         <i class="bi bi-people-fill"></i>{{ __('app.customers') }}
                     </a>
                 </div>
-                <div class="sidebar-item">
-                    <a href="{{ route('customers.dettes') }}" @class(['active' => request()->routeIs('customers.dettes')])>
-                        <i class="bi bi-bank2"></i>{{ __('app.client_debts') }}
-                    </a>
-                </div>
+                @if(!$currentUser->isSeller())
+                    <div class="sidebar-item">
+                        <a href="{{ route('customers.dettes') }}" @class(['active' => request()->routeIs('customers.dettes')])>
+                            <i class="bi bi-bank2"></i>{{ __('app.client_debts') }}
+                        </a>
+                    </div>
+                @endif
 
                 <div class="sidebar-section mt-2">{{ __('app.finances_section') ?? 'Finances' }}</div>
                 <div class="sidebar-item">

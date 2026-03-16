@@ -48,12 +48,20 @@ class Index extends Component
 
     public function confirmDelete(int $id): void
     {
+        if (!auth()->user()->canDelete()) {
+            session()->flash('error', __('app.unauthorized'));
+            return;
+        }
         $this->deletingId = $id;
         $this->showDeleteModal = true;
     }
 
     public function delete(): void
     {
+        if (!auth()->user()->canDelete()) {
+            session()->flash('error', __('app.unauthorized'));
+            return;
+        }
         /** @var \App\Models\User $user */
         $user = auth()->user();
         $product = Product::forStore($user->store_id)

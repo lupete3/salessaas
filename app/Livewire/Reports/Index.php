@@ -29,7 +29,8 @@ class Index extends Component
 
     public function exportStockReport(): void
     {
-        $store = auth()->user()->store;
+        $user = auth()->user();
+        $store = $user->store;
         $currency = $store->currency ?: 'USD';
 
         $products = Product::forStore($store->id)
@@ -37,7 +38,7 @@ class Index extends Component
             ->orderBy('name')
             ->get();
 
-        $totalPurchaseValue = $products->sum(fn($m) => $m->stock_quantity * $m->purchase_price);
+        $totalPurchaseValue = $user->canViewFinancials() ? $products->sum(fn($m) => $m->stock_quantity * $m->purchase_price) : 0;
         $totalSellingValue = $products->sum(fn($m) => $m->stock_quantity * $m->selling_price);
 
         $pdf = Pdf::loadView('pdf.stock-report', [
@@ -47,6 +48,7 @@ class Index extends Component
             'date' => now()->format('d/m/Y H:i'),
             'currentStore' => $store,
             'currency' => $currency,
+            'hidePurchasePrice' => !$user->canViewFinancials(),
         ])->setPaper('a4', 'landscape');
 
         $this->dispatch('download-pdf', base64_encode($pdf->output()), __('reports.stock_report_file') . '-' . now()->format('Y-m-d') . '.pdf');
@@ -54,13 +56,19 @@ class Index extends Component
 
     public function exportSalesReport(): void
     {
-        $store = auth()->user()->store;
+        $user = auth()->user();
+        $store = $user->store;
         $currency = $store->currency ?: 'USD';
 
-        $sales = Sale::forStore($store->id)
+        $query = Sale::forStore($user->store_id)
             ->completed()
-            ->whereBetween('created_at', [$this->startDate . ' 00:00:00', $this->endDate . ' 23:59:59'])
-            ->with(['items.product', 'user'])
+            ->whereBetween('created_at', [$this->startDate . ' 00:00:00', $this->endDate . ' 23:59:59']);
+
+        if ($user->isSeller()) {
+            $query->where('user_id', $user->id);
+        }
+
+        $sales = $query->with(['items.product', 'user'])
             ->latest()
             ->get();
 
@@ -69,10 +77,11 @@ class Index extends Component
             'startDate' => $this->startDate,
             'endDate' => $this->endDate,
             'totalAmount' => $sales->sum('final_amount'),
-            'totalProfit' => $sales->sum(fn($s) => $s->final_amount - $s->items->sum(fn($i) => $i->quantity * $i->product->purchase_price)),
+            'totalProfit' => $user->canViewFinancials() ? $sales->sum(fn($s) => $s->final_amount - $s->items->sum(fn($i) => $i->quantity * $i->product->purchase_price)) : 0,
             'date' => now()->format('d/m/Y H:i'),
             'currentStore' => $store,
             'currency' => $currency,
+            'hideProfit' => !$user->canViewFinancials(),
         ])->setPaper('a4', 'landscape');
 
         $this->dispatch('download-pdf', base64_encode($pdf->output()), __('reports.sales_report_file') . '-' . $this->startDate . '-' . __('reports.to') . '-' . $this->endDate . '.pdf');
@@ -80,7 +89,12 @@ class Index extends Component
 
     public function exportPurchasesReport(): void
     {
-        $store = auth()->user()->store;
+        $user = auth()->user();
+        if (!$user->canViewFinancials()) {
+            session()->flash('error', __('app.unauthorized'));
+            return;
+        }
+        $store = $user->store;
         $currency = $store->currency ?: 'USD';
 
         $query = Purchase::forStore($store->id)
@@ -108,7 +122,12 @@ class Index extends Component
 
     public function exportFinanceReport(): void
     {
-        $store = auth()->user()->store;
+        $user = auth()->user();
+        if (!$user->canViewFinancials()) {
+            session()->flash('error', __('app.unauthorized'));
+            return;
+        }
+        $store = $user->store;
         $currency = $store->currency ?: 'USD';
 
         $salesByMethod = Sale::forStore($store->id)
@@ -169,7 +188,12 @@ class Index extends Component
 
     public function exportSuppliersReport(): void
     {
-        $store = auth()->user()->store;
+        $user = auth()->user();
+        if (!$user->canViewFinancials()) {
+            session()->flash('error', __('app.unauthorized'));
+            return;
+        }
+        $store = $user->store;
         $suppliers = \App\Models\Supplier::where('store_id', $store->id)->orderBy('name')->get();
 
         $pdf = Pdf::loadView('pdf.suppliers-report', [
@@ -183,7 +207,12 @@ class Index extends Component
 
     public function exportCustomerDebtsReport(): void
     {
-        $store = auth()->user()->store;
+        $user = auth()->user();
+        if (!$user->canViewFinancials()) {
+            session()->flash('error', __('app.unauthorized'));
+            return;
+        }
+        $store = $user->store;
         $currency = $store->currency ?: 'USD';
 
         // total_debt is an accessor (not a real column), so we filter/sort in PHP
@@ -207,12 +236,18 @@ class Index extends Component
 
     public function exportPaymentsReport(): void
     {
-        $store = auth()->user()->store;
+        $user = auth()->user();
+        $store = $user->store;
         $currency = $store->currency ?: 'USD';
 
-        $payments = \App\Models\DebtPayment::where('store_id', $store->id)
-            ->whereBetween('paid_at', [$this->startDate . ' 00:00:00', $this->endDate . ' 23:59:59'])
-            ->with(['customer', 'user'])
+        $query = \App\Models\DebtPayment::where('store_id', $store->id)
+            ->whereBetween('paid_at', [$this->startDate . ' 00:00:00', $this->endDate . ' 23:59:59']);
+
+        if ($user->isSeller()) {
+            $query->where('user_id', $user->id);
+        }
+
+        $payments = $query->with(['customer', 'user'])
             ->latest()
             ->get();
 
@@ -231,7 +266,12 @@ class Index extends Component
 
     public function exportInventoriesReport(): void
     {
-        $store = auth()->user()->store;
+        $user = auth()->user();
+        if (!$user->canViewFinancials()) {
+            session()->flash('error', __('app.unauthorized'));
+            return;
+        }
+        $store = $user->store;
 
         $inventories = \App\Models\Inventory::where('store_id', $store->id)
             ->whereBetween('date', [$this->startDate, $this->endDate])

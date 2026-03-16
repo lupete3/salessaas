@@ -39,6 +39,13 @@ class Expenses extends Component
         $this->resetValidation();
         if ($id) {
             $expense = Expense::findOrFail($id);
+
+            // Restriction for sellers
+            if (auth()->user()->isSeller() && $expense->user_id !== auth()->id()) {
+                session()->flash('error', __('app.unauthorized'));
+                return;
+            }
+
             $this->editingId = $id;
             $this->category = $expense->category;
             $this->description = $expense->description;
@@ -85,19 +92,34 @@ class Expenses extends Component
 
     public function delete(int $id): void
     {
-        Expense::forStore(auth()->user()->store_id)->findOrFail($id)->delete();
+        $expense = Expense::forStore(auth()->user()->store_id)->findOrFail($id);
+
+        // Restriction for sellers
+        if (auth()->user()->isSeller() && $expense->user_id !== auth()->id()) {
+            session()->flash('error', __('app.unauthorized'));
+            return;
+        }
+
+        $expense->delete();
         session()->flash('success', __('finances.expense_deleted'));
     }
 
     public function render()
     {
-        $expenses = Expense::forStore(auth()->user()->store_id)
-            ->latest('expense_date')
+        $query = Expense::forStore(auth()->user()->store_id);
+        $statsQuery = Expense::forStore(auth()->user()->store_id)
+            ->whereMonth('expense_date', now()->month);
+
+        // Restriction for sellers to only see their own expenses
+        if (auth()->user()->isSeller()) {
+            $query->where('user_id', auth()->id());
+            $statsQuery->where('user_id', auth()->id());
+        }
+
+        $expenses = $query->latest('expense_date')
             ->paginate(15);
 
-        $totalMonth = Expense::forStore(auth()->user()->store_id)
-            ->whereMonth('expense_date', now()->month)
-            ->sum('amount');
+        $totalMonth = $statsQuery->sum('amount');
 
         $categories = ['loyer', 'salaires', 'electricite', 'eau', 'transport', 'fournitures', 'autre'];
 
