@@ -191,9 +191,9 @@
                 <td class="label">{{ __('app.status') }} :</td>
                 <td>
                     @if($inventory->status === 'completed')
-                        <span class="badge badge-success">Complété</span>
+                        <span class="badge badge-success">{{ __('app.completed') }}</span>
                     @elseif($inventory->status === 'in_progress')
-                        <span class="badge badge-warning">En cours</span>
+                        <span class="badge badge-warning">{{ __('app.processing') }}</span>
                     @else
                         <span class="badge badge-secondary">{{ ucfirst($inventory->status) }}</span>
                     @endif
@@ -221,7 +221,7 @@
                 <th class="text-center">{{ __('stock.difference') }}</th>
                 <th class="text-right">{{ __('products.purchase_price') ?? 'P.A. Unitaire' }}</th>
                 <th class="text-right">{{ __('reports.stock_value_pa') }}</th>
-                <th class="text-center">Statut</th>
+                <th class="text-center">{{ __('app.status') }}</th>
             </tr>
         </thead>
         <tbody>
@@ -244,9 +244,11 @@
                     </td>
                     <td class="text-center">
                         @if($diff < 0)
-                            <span class="badge" style="background:#dc3545;color:#fff;">Manque</span>
+                            <span class="badge"
+                                style="background:#dc3545;color:#fff;">{{ __('inventories.shortage') ?? 'Manque' }}</span>
                         @elseif($diff > 0)
-                            <span class="badge" style="background:#198754;color:#fff;">Surplus</span>
+                            <span class="badge"
+                                style="background:#198754;color:#fff;">{{ __('inventories.surplus') ?? 'Surplus' }}</span>
                         @else
                             <span class="badge badge-secondary">OK</span>
                         @endif
@@ -260,14 +262,18 @@
     <div class="summary">
         <table>
             <tr>
-                <td style="width:25%"><strong>Articles inventoriés :</strong> {{ $items->count() }}</td>
-                <td style="width:25%"><strong>Articles conformes :</strong> {{ $items->where('diff', 0)->count() }}</td>
+                <td style="width:25%"><strong>{{ __('stock.inventory_items') ?? 'Articles inventoriés' }} :</strong>
+                    {{ $items->count() }}</td>
+                <td style="width:25%"><strong>{{ __('inventories.compliant_items') ?? 'Articles conformes' }} :</strong>
+                    {{ $items->where('diff', 0)->count() }}</td>
                 <td class="danger-cell" style="width:25%">
-                    ⚠ Valeur des manquants : {{ number_format($totalShortageValue, 2, ',', ' ') }} {{ $currency }}
+                    ⚠ {{ __('inventories.shortage_value') ?? 'Valeur des manquants' }} :
+                    {{ number_format($totalShortageValue, 2, ',', ' ') }} {{ $currency }}
                     ({{ $items->where('is_shortage', true)->count() }} art.)
                 </td>
                 <td class="success-cell" style="width:25%">
-                    ↑ Valeur des surplus : {{ number_format($totalSurplusValue, 2, ',', ' ') }} {{ $currency }}
+                    ↑ {{ __('inventories.surplus_value') ?? 'Valeur des surplus' }} :
+                    {{ number_format($totalSurplusValue, 2, ',', ' ') }} {{ $currency }}
                     ({{ $items->where('is_surplus', true)->count() }} art.)
                 </td>
             </tr>

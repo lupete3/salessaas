@@ -129,7 +129,7 @@
                         @if($inventory->status === 'completed')
                             <span class="badge bg-success">{{ __('app.completed') ?? 'Complété' }}</span>
                         @elseif($inventory->status === 'in_progress')
-                            <span class="badge bg-warning">{{ __('En cours') }}</span>
+                            <span class="badge bg-warning">{{ __('app.processing') ?? 'En cours' }}</span>
                         @else
                             <span class="badge bg-secondary">{{ ucfirst($inventory->status) }}</span>
                         @endif

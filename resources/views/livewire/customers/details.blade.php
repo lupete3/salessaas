@@ -22,7 +22,7 @@
                 <div class="card-body">
                     <div class="d-flex align-items-center gap-3 mb-3">
                         <div class="p-3 bg-primary bg-opacity-10 text-primary rounded-circle">
-                            <i class="bi bi-person fs-3"></i>
+                            <i class="bi bi-person-badge-fill fs-3"></i>
                         </div>
                         <div>
                             <h5 class="fw-bold mb-0">{{ __('app.customer_info') }}</h5>
@@ -43,7 +43,7 @@
                 <div class="card-body">
                     <div class="d-flex align-items-center gap-3 mb-3">
                         <div class="p-3 bg-danger bg-opacity-10 text-danger rounded-circle">
-                            <i class="bi bi-bank2 fs-3"></i>
+                            <i class="bi bi-bank fs-3"></i>
                         </div>
                         <h5 class="fw-bold mb-0">{{ __('app.financial_situation') }}</h5>
                     </div>

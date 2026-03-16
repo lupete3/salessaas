@@ -111,7 +111,8 @@
     <div class="summary">
         <table style="width: 100%;">
             <tr>
-                <td><strong>{{ __('reports.total') ?? 'Total Fournisseurs' }} :</strong> {{ $suppliers->count() }}</td>
+                <td><strong>{{ __('reports.total_suppliers') ?? 'Total Fournisseurs' }} :</strong>
+                    {{ $suppliers->count() }}</td>
             </tr>
         </table>
     </div>

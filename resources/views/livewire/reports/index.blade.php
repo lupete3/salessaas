@@ -186,7 +186,7 @@
                 <div class="card-body p-4">
                     <div class="d-flex align-items-center gap-3 mb-3">
                         <div class="p-3 bg-primary bg-opacity-10 text-primary rounded-4">
-                            <i class="bi bi-people fs-3"></i>
+                            <i class="bi bi-people-fill fs-3"></i>
                         </div>
                         <h5 class="fw-bold mb-0">{{ __('reports.customers_report') }}</h5>
                     </div>
@@ -244,7 +244,7 @@
                 <div class="card-body p-4">
                     <div class="d-flex align-items-center gap-3 mb-3">
                         <div class="p-3 bg-danger bg-opacity-10 text-danger rounded-4">
-                            <i class="bi bi-bank2 fs-3"></i>
+                            <i class="bi bi-bank fs-3"></i>
                         </div>
                         <h5 class="fw-bold mb-0">{{ __('reports.customer_debts_report') }}</h5>
                     </div>

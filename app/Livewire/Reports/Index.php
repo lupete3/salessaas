@@ -6,9 +6,9 @@ use App\Models\Product;
 use App\Models\Purchase;
 use App\Models\Sale;
 use App\Models\Expense;
+use Livewire\Attributes\Title;
 use Livewire\Component;
 use Livewire\Attributes\Layout;
-use Livewire\Attributes\Title;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\DB;
 
@@ -289,7 +289,9 @@ class Index extends Component
             'currency' => $currency,
         ])->setPaper('a4', 'landscape');
 
-        $filename = __('reports.inventories_report_file') . '-detail-' . $inventory->date->format('Y-m-d') . '.pdf';
+        /** @var \Carbon\Carbon $inventoryDate */
+        $inventoryDate = $inventory->date;
+        $filename = __('reports.inventories_report_file') . '-detail-' . $inventoryDate->format('Y-m-d') . '.pdf';
         $this->dispatch('download-pdf', base64_encode($pdf->output()), $filename);
     }
 
@@ -314,6 +316,7 @@ class Index extends Component
         $this->dispatch('download-pdf', base64_encode($pdf->output()), __('reports.stock_movements_report_file') . '-' . $this->startDate . '-' . __('reports.to') . '-' . $this->endDate . '.pdf');
     }
 
+    #[Title('Rapports')]
     public function render()
     {
         $store = auth()->user()->store;
@@ -327,7 +330,6 @@ class Index extends Component
             ->with([
                 'currency' => $currency,
                 'currentStore' => $store,
-            ])
-            ->title(__('reports.title'));
+            ]);
     }
 }

@@ -42,7 +42,6 @@ Route::get('/locale/{locale}', function (string $locale) {
     return back();
 })->name('locale.switch');
 
-// ── Welcome / Home ───────────────────────────────────────────────────────────
 Route::get('/', function () {
     return auth()->check()
         ? redirect()->route('dashboard')

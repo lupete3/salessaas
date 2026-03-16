@@ -109,7 +109,8 @@
     <div class="summary">
         <table style="width: 100%;">
             <tr>
-                <td><strong>{{ __('reports.total') ?? 'Total Clients' }} :</strong> {{ $customers->count() }}</td>
+                <td><strong>{{ __('reports.total_customers') ?? 'Total Clients' }} :</strong> {{ $customers->count() }}
+                </td>
             </tr>
         </table>
     </div>

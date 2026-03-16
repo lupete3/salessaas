@@ -12,6 +12,7 @@ use App\Models\Sale;
 use App\Models\Store;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 class ApiController extends Controller
@@ -276,6 +277,41 @@ class ApiController extends Controller
             }
         }
 
+        // Process Cancelled Sales
+        if (isset($changes['cancelled_sales'])) {
+            foreach ($changes['cancelled_sales'] as $saleUuid) {
+                $sale = Sale::where('uuid', $saleUuid)->where('status', '!=', 'cancelled')->first();
+                if ($sale) {
+                    DB::transaction(function () use ($sale, $user) {
+                        $sale->update(['status' => 'cancelled']);
+
+                        foreach ($sale->items as $item) {
+                            $product = Product::find($item['product_id']);
+                            if ($product) {
+                                $before = $product->stock_quantity;
+                                $product->increment('stock_quantity', $item['quantity']);
+                                $after = $product->fresh()->stock_quantity;
+
+                                // Log stock restoration
+                                \App\Models\StockMovement::create([
+                                    'store_id' => $user->store_id,
+                                    'product_id' => $item['product_id'],
+                                    'user_id' => $user->id,
+                                    'type' => 'in',
+                                    'quantity' => $item['quantity'],
+                                    'quantity_before' => $before,
+                                    'quantity_after' => $after,
+                                    'reason' => 'Annulation Vente (Sync)',
+                                    'reference' => $sale->sale_number,
+                                    'reference_type' => 'sale',
+                                ]);
+                            }
+                        }
+                    });
+                }
+            }
+        }
+
         return response()->json([
             'success' => true,
             'results' => [
@@ -283,6 +319,7 @@ class ApiController extends Controller
                 'sales' => array_map(fn($s) => ['local_id' => $s['uuid'], 'server_id' => 1], $changes['sales'] ?? []),
                 'expenses' => array_map(fn($e) => ['local_id' => $e['uuid']], $changes['expenses'] ?? []),
                 'debt_payments' => array_map(fn($p) => ['local_id' => $p['uuid']], $changes['debt_payments'] ?? []),
+                'cancelled_sales' => $changes['cancelled_sales'] ?? [],
             ],
             'store' => $user->store ? [
                 'id' => $user->store->id,

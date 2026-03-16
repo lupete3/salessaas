@@ -53,11 +53,9 @@ class Customer extends Model
     /** Calcule la dette totale actuelle du client */
     public function getTotalDebtAttribute(): float
     {
-        // La dette = somme de (final_amount - amount_paid) pour les ventes complétées à crédit
-        // amount_paid est already mis à jour lors de chaque remboursement (via recordPayment)
-        // On n'a PAS besoin de soustraire aussi les DebtPayment qui sont enregistrés en parallèle
+        // La dette = somme de (final_amount - amount_paid) pour les ventes non annulées
         return (float) $this->sales()
-            ->where('status', 'completed')
+            ->where('status', '!=', 'cancelled')
             ->whereColumn('amount_paid', '<', 'final_amount')
             ->get()
             ->sum(fn($sale) => max(0, $sale->final_amount - $sale->amount_paid));

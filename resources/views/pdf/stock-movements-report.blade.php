@@ -103,7 +103,7 @@
             <tr>
                 <th>{{ __('app.date') }}</th>
                 <th>{{ __('purchases.product') ?? 'Produit' }}</th>
-                <th>{{ __('app.status') ?? 'Type' }}</th>
+                <th>{{ __('reports.type') ?? 'Type' }}</th>
                 <th class="text-center">{{ __('purchases.quantity') }}</th>
                 <th class="text-center">{{ __('stock.previous') ?? 'Avant' }}</th>
                 <th class="text-center">{{ __('stock.new') ?? 'Après' }}</th>
@@ -133,7 +133,8 @@
     <div class="summary">
         <table style="width: 100%;">
             <tr>
-                <td><strong>{{ __('reports.total') ?? 'Total Mouvements' }} :</strong> {{ $movements->count() }}</td>
+                <td><strong>{{ __('reports.total_movements') ?? 'Total Mouvements' }} :</strong>
+                    {{ $movements->count() }}</td>
             </tr>
         </table>
     </div>
