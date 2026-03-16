@@ -307,6 +307,46 @@
             </div>
         </div>
 
+        <!-- Stock Movements Report Card -->
+        <div class="col-md-6 col-lg-4">
+            <div class="card h-100 shadow-sm border-0 border-top border-4 border-warning transition-hover">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center gap-3 mb-3">
+                        <div class="p-3 bg-warning bg-opacity-10 text-warning rounded-4">
+                            <i class="bi bi-boxes fs-3"></i>
+                        </div>
+                        <h5 class="fw-bold mb-0">{{ __('reports.stock_movements_report') }}</h5>
+                    </div>
+                    <div class="mb-3">
+                        <label
+                            class="form-label small fw-bold text-muted">{{ __('reports.period') ?? 'Période' }}</label>
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <input type="date" wire:model.live="startDate"
+                                    class="form-control form-control-sm shadow-sm">
+                            </div>
+                            <div class="col-6">
+                                <input type="date" wire:model.live="endDate"
+                                    class="form-control form-control-sm shadow-sm">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-auto">
+                        <button wire:click="exportStockMovementsReport" wire:loading.attr="disabled"
+                            class="btn btn-warning text-dark w-100 py-2 fw-bold shadow-sm rounded-3">
+                            <span wire:loading.remove wire:target="exportStockMovementsReport">
+                                <i class="bi bi-download me-2"></i> {{ __('reports.export_pdf') }}
+                            </span>
+                            <span wire:loading wire:target="exportStockMovementsReport">
+                                <span class="spinner-border spinner-border-sm me-1" role="status"></span>
+                                {{ __('app.generating') ?? 'Génération...' }}
+                            </span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Inventories Report Card -->
         <div class="col-md-6 col-lg-4">
             <div class="card h-100 shadow-sm border-0 border-top border-4 border-info transition-hover">
@@ -369,46 +409,6 @@
                             <span wire:loading wire:target="exportInventoriesReport">
                                 <span class="spinner-border spinner-border-sm me-1" role="status"></span>
                                 {{ __('app.generating') }}
-                            </span>
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Stock Movements Report Card -->
-        <div class="col-md-6 col-lg-4">
-            <div class="card h-100 shadow-sm border-0 border-top border-4 border-warning transition-hover">
-                <div class="card-body p-4">
-                    <div class="d-flex align-items-center gap-3 mb-3">
-                        <div class="p-3 bg-warning bg-opacity-10 text-warning rounded-4">
-                            <i class="bi bi-boxes fs-3"></i>
-                        </div>
-                        <h5 class="fw-bold mb-0">{{ __('reports.stock_movements_report') }}</h5>
-                    </div>
-                    <div class="mb-3">
-                        <label
-                            class="form-label small fw-bold text-muted">{{ __('reports.period') ?? 'Période' }}</label>
-                        <div class="row g-2">
-                            <div class="col-6">
-                                <input type="date" wire:model.live="startDate"
-                                    class="form-control form-control-sm shadow-sm">
-                            </div>
-                            <div class="col-6">
-                                <input type="date" wire:model.live="endDate"
-                                    class="form-control form-control-sm shadow-sm">
-                            </div>
-                        </div>
-                    </div>
-                    <div class="mt-auto">
-                        <button wire:click="exportStockMovementsReport" wire:loading.attr="disabled"
-                            class="btn btn-warning text-dark w-100 py-2 fw-bold shadow-sm rounded-3">
-                            <span wire:loading.remove wire:target="exportStockMovementsReport">
-                                <i class="bi bi-download me-2"></i> {{ __('reports.export_pdf') }}
-                            </span>
-                            <span wire:loading wire:target="exportStockMovementsReport">
-                                <span class="spinner-border spinner-border-sm me-1" role="status"></span>
-                                {{ __('app.generating') ?? 'Génération...' }}
                             </span>
                         </button>
                     </div>
