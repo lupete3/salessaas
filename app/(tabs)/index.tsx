@@ -43,8 +43,8 @@ export default function POSScreen() {
     );
   }, [customers, customerSearch]);
 
-  // Fallback to older store.currency if needed, or default
-  const currency = 'CDF'; // Simplified for offline-first store model
+  // Use the store's configured currency (set at login from the server)
+  const currency = store?.currency || 'CDF';
 
   const filtered = useMemo(
     () =>
