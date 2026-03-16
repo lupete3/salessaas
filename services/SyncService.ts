@@ -95,17 +95,19 @@ export const SyncService = {
    * Push all unsynced local data to the central `/sync` endpoint.
    */
   pushData: async (): Promise<{ success: boolean; error?: string }> => {
-    const { offlineQueue, customers, expenses, debtPayments } = useAppStore.getState();
+    const { offlineQueue, customers, expenses, debtPayments, cancelledSales } = useAppStore.getState();
     const pendingSales = offlineQueue.filter((s) => !s.is_synced);
     const pendingCustomers = customers.filter((c) => !c.is_synced);
     const pendingExpenses = expenses.filter((e) => !e.is_synced);
     const pendingDebtPayments = debtPayments.filter((p) => !p.is_synced);
+    const pendingCancellations = cancelledSales;
 
     if (
         pendingSales.length === 0 && 
         pendingCustomers.length === 0 && 
         pendingExpenses.length === 0 && 
-        pendingDebtPayments.length === 0
+        pendingDebtPayments.length === 0 &&
+        pendingCancellations.length === 0
     ) return { success: true };
 
     try {
@@ -147,7 +149,8 @@ export const SyncService = {
             amount: p.amount,
             payment_method: p.payment_method,
             paid_at: p.paid_at
-        }))
+        })),
+        cancelled_sales: pendingCancellations
       };
 
       const res = await apiClient().post('/sync', { changes: payload });
@@ -167,6 +170,7 @@ export const SyncService = {
              if (results.customers) store.markCustomersSynced(results.customers);
              if (results.expenses) store.markExpensesSynced(results.expenses.map((r: any) => r.local_id));
              if (results.debt_payments) store.markDebtPaymentsSynced(results.debt_payments.map((r: any) => r.local_id));
+             if (results.cancelled_sales) store.markCancelledSalesSynced(results.cancelled_sales);
           } else {
              // Fallback for older API versions if necessary
              if (pendingSales.length > 0) {
@@ -181,6 +185,9 @@ export const SyncService = {
           }
           if (pendingDebtPayments.length > 0) {
             store.markDebtPaymentsSynced(pendingDebtPayments.map(p => p.local_id));
+          }
+          if (pendingCancellations.length > 0) {
+            store.markCancelledSalesSynced(pendingCancellations);
           }
 
           return { success: true };

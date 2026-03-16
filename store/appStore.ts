@@ -90,6 +90,7 @@ interface AppState {
   cart: CartItem[];
   offlineQueue: LocalSale[];   // unsynced sales
   syncedSales: LocalSale[];    // synced sales (history)
+  cancelledSales: string[];    // local_ids of synced sales that were cancelled locally and need server sync
   lastSyncAt: string | null;
 
   // Products
@@ -121,6 +122,7 @@ interface AppState {
   cancelSale: (localId: string) => { success: boolean; message: string };
   markSalesSynced: (results: { local_id: string; server_id: number }[]) => void;
   clearQueue: () => void;
+  markCancelledSalesSynced: (localIds: string[]) => void;
   setLastSyncAt: (dt: string) => void;
 }
 
@@ -141,6 +143,7 @@ export const useAppStore = create<AppState>()(
       cart: [],
       offlineQueue: [],
       syncedSales: [],
+      cancelledSales: [],
       lastSyncAt: null,
 
       // ── Products ──────────────────────────────────────────────────
@@ -371,6 +374,13 @@ export const useAppStore = create<AppState>()(
 
       clearQueue: () => set({ offlineQueue: [] }),
 
+      markCancelledSalesSynced: (localIds: string[]) => {
+        const idSet = new Set(localIds);
+        set({
+          cancelledSales: get().cancelledSales.filter(id => !idSet.has(id))
+        });
+      },
+
       setLastSyncAt: (dt) => set({ lastSyncAt: dt }),
 
       cancelSale: (localId) => {
@@ -395,11 +405,14 @@ export const useAppStore = create<AppState>()(
             return p;
         });
 
-        // Remove from queues
+        // Update queues
+        const isAlreadySynced = syncedSales.some(s => s.local_id === localId);
+        
         set({
             products: newProducts,
             offlineQueue: offlineQueue.filter(s => s.local_id !== localId),
-            syncedSales: syncedSales.filter(s => s.local_id !== localId)
+            syncedSales: syncedSales.filter(s => s.local_id !== localId),
+            cancelledSales: isAlreadySynced ? [...get().cancelledSales, localId] : get().cancelledSales
         });
 
         return { success: true, message: "Vente annulée et stock restauré." };
