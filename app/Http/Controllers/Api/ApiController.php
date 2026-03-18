@@ -475,6 +475,51 @@ class ApiController extends Controller
         return response()->json(['suppliers' => $suppliers]);
     }
 
+    public function storeSupplier(Request $request)
+    {
+        $user = $request->user();
+        if (!in_array($user->role?->slug, ['admin', 'proprietaire'])) {
+            return response()->json(['message' => 'Non autorisé.'], 403);
+        }
+
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'phone' => 'nullable|string|max:50',
+            'email' => 'nullable|email|max:255',
+            'address' => 'nullable|string|max:500',
+        ]);
+
+        $supplier = \App\Models\Supplier::create(array_merge($validated, ['store_id' => $user->store_id]));
+
+        return response()->json(['supplier' => $supplier]);
+    }
+
+    public function updateSupplier(Request $request, $id)
+    {
+        $user = $request->user();
+        if (!in_array($user->role?->slug, ['admin', 'proprietaire'])) {
+            return response()->json(['message' => 'Non autorisé.'], 403);
+        }
+
+        $supplier = \App\Models\Supplier::where('store_id', $user->store_id)->findOrFail($id);
+        $supplier->update($request->only(['name', 'phone', 'email', 'address']));
+
+        return response()->json(['supplier' => $supplier]);
+    }
+
+    public function destroySupplier(Request $request, $id)
+    {
+        $user = $request->user();
+        if (!in_array($user->role?->slug, ['admin', 'proprietaire'])) {
+            return response()->json(['message' => 'Non autorisé.'], 403);
+        }
+
+        $supplier = \App\Models\Supplier::where('store_id', $user->store_id)->findOrFail($id);
+        $supplier->delete();
+
+        return response()->json(['message' => 'Fournisseur supprimé.']);
+    }
+
     public function getInventories(Request $request)
     {
         $user = $request->user();
@@ -571,6 +616,22 @@ class ApiController extends Controller
         ]);
 
         return response()->json(['user' => $newUser, 'message' => 'Utilisateur créé.']);
+    }
+
+    public function updateUser(Request $request, $id)
+    {
+        $user = $request->user();
+        if (!in_array($user->role?->slug, ['admin', 'proprietaire'])) {
+            return response()->json(['message' => 'Non autorisé.'], 403);
+        }
+
+        $target = User::where('store_id', $user->store_id)->findOrFail($id);
+        $target->update($request->only(['name', 'email', 'role_id']));
+        if ($request->filled('password')) {
+            $target->update(['password' => bcrypt($request->password)]);
+        }
+
+        return response()->json(['user' => $target->fresh()->load('role'), 'message' => 'Utilisateur modifié.']);
     }
 
     public function toggleUser(Request $request, $id)

@@ -19,11 +19,15 @@ Route::middleware(['auth:sanctum', 'tenant'])->group(function () {
         Route::get('/users', [ApiController::class, 'getUsers']);
         Route::get('/purchases', [ApiController::class, 'getPurchases']);
         Route::get('/suppliers', [ApiController::class, 'getSuppliers']);
+        Route::post('/suppliers', [ApiController::class, 'storeSupplier']);
+        Route::put('/suppliers/{id}', [ApiController::class, 'updateSupplier']);
+        Route::delete('/suppliers/{id}', [ApiController::class, 'destroySupplier']);
         Route::get('/inventories', [ApiController::class, 'getInventories']);
         Route::get('/stats', [ApiController::class, 'getAdminStats']);
         Route::get('/roles', [ApiController::class, 'getRoles']);
 
         Route::post('/users', [ApiController::class, 'storeUser']);
+        Route::put('/users/{id}', [ApiController::class, 'updateUser']);
         Route::patch('/users/{id}/toggle', [ApiController::class, 'toggleUser']);
 
         Route::post('/products', [ApiController::class, 'storeProduct']);
