@@ -433,7 +433,7 @@ class ApiController extends Controller
             ->map(function ($p) {
                 return [
                     'id' => $p->id,
-                    'date' => $p->purchase_date->toIso8601String(),
+                    'date' => $p->purchase_date ? $p->purchase_date->toIso8601String() : null,
                     'number' => $p->purchase_number,
                     'supplier_name' => $p->supplier?->name,
                     'total_amount' => (float) $p->total_amount,
@@ -451,6 +451,54 @@ class ApiController extends Controller
             });
 
         return response()->json(['purchases' => $purchases]);
+    }
+
+    public function storePurchase(Request $request)
+    {
+        $user = $request->user();
+        if (!in_array($user->role?->slug, ['admin', 'proprietaire'])) {
+            return response()->json(['message' => 'Non autorisé.'], 403);
+        }
+
+        $validated = $request->validate([
+            'supplier_id' => 'nullable|exists:suppliers,id',
+            'purchase_date' => 'required|date',
+            'items' => 'required|array|min:1',
+            'items.*.product_id' => 'required|exists:products,id',
+            'items.*.quantity' => 'required|integer|min:1',
+            'items.*.unit_cost' => 'required|numeric|min:0',
+        ]);
+
+        $totalAmount = 0;
+        foreach ($validated['items'] as $item) {
+            $totalAmount += $item['quantity'] * $item['unit_cost'];
+        }
+
+        $purchase = \App\Models\Purchase::create([
+            'store_id' => $user->store_id,
+            'supplier_id' => $validated['supplier_id'] ?? null,
+            'purchase_date' => $validated['purchase_date'],
+            'purchase_number' => 'ACH-' . strtoupper(substr(uniqid(), -6)),
+            'total_amount' => $totalAmount,
+            'amount_paid' => 0,
+            'status' => 'pending',
+        ]);
+
+        foreach ($validated['items'] as $item) {
+            $subtotal = $item['quantity'] * $item['unit_cost'];
+            $purchase->items()->create([
+                'product_id' => $item['product_id'],
+                'quantity' => $item['quantity'],
+                'unit_cost' => $item['unit_cost'],
+                'subtotal' => $subtotal,
+            ]);
+
+            // Update stock
+            \App\Models\Product::where('id', $item['product_id'])
+                ->increment('stock_quantity', $item['quantity']);
+        }
+
+        return response()->json(['purchase' => $purchase, 'total' => $totalAmount]);
     }
 
     public function getSuppliers(Request $request)

@@ -18,6 +18,7 @@ Route::middleware(['auth:sanctum', 'tenant'])->group(function () {
     Route::prefix('admin')->group(function () {
         Route::get('/users', [ApiController::class, 'getUsers']);
         Route::get('/purchases', [ApiController::class, 'getPurchases']);
+        Route::post('/purchases', [ApiController::class, 'storePurchase']);
         Route::get('/suppliers', [ApiController::class, 'getSuppliers']);
         Route::post('/suppliers', [ApiController::class, 'storeSupplier']);
         Route::put('/suppliers/{id}', [ApiController::class, 'updateSupplier']);
