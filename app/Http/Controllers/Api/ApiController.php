@@ -467,11 +467,18 @@ class ApiController extends Controller
             'items.*.product_id' => 'required|exists:products,id',
             'items.*.quantity' => 'required|integer|min:1',
             'items.*.unit_price' => 'required|numeric|min:0',
+            'amount_paid' => 'nullable|numeric|min:0',
         ]);
 
         $totalAmount = 0;
         foreach ($validated['items'] as $item) {
             $totalAmount += $item['quantity'] * $item['unit_price'];
+        }
+
+        $amountPaid = (float) ($validated['amount_paid'] ?? 0);
+        $status = 'pending';
+        if ($amountPaid > 0) {
+            $status = $amountPaid >= $totalAmount ? 'paid' : 'partial';
         }
 
         $purchase = \App\Models\Purchase::create([
@@ -480,8 +487,8 @@ class ApiController extends Controller
             'purchase_date' => $validated['purchase_date'],
             'purchase_number' => 'ACH-' . strtoupper(substr(uniqid(), -6)),
             'total_amount' => $totalAmount,
-            'amount_paid' => 0,
-            'status' => 'pending',
+            'amount_paid' => $amountPaid,
+            'status' => $status,
         ]);
 
         foreach ($validated['items'] as $item) {
@@ -511,7 +518,7 @@ class ApiController extends Controller
         $purchase = \App\Models\Purchase::where('store_id', $user->store_id)->findOrFail($id);
         $amountPaid = (float) $request->input('amount_paid', 0);
         $purchase->amount_paid = $amountPaid;
-        $purchase->status = $amountPaid >= (float) $purchase->total_amount ? 'completed' : 'partial';
+        $purchase->status = $amountPaid >= (float) $purchase->total_amount ? 'paid' : 'partial';
         $purchase->save();
 
         return response()->json([
