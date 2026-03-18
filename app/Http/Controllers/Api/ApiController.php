@@ -443,7 +443,7 @@ class ApiController extends Controller
                         return [
                             'product_name' => $i->product?->name,
                             'quantity' => $i->quantity,
-                            'unit_cost' => (float) $i->unit_cost,
+                            'unit_price' => (float) $i->unit_price,
                             'subtotal' => (float) $i->subtotal,
                         ];
                     }),
@@ -466,12 +466,12 @@ class ApiController extends Controller
             'items' => 'required|array|min:1',
             'items.*.product_id' => 'required|exists:products,id',
             'items.*.quantity' => 'required|integer|min:1',
-            'items.*.unit_cost' => 'required|numeric|min:0',
+            'items.*.unit_price' => 'required|numeric|min:0',
         ]);
 
         $totalAmount = 0;
         foreach ($validated['items'] as $item) {
-            $totalAmount += $item['quantity'] * $item['unit_cost'];
+            $totalAmount += $item['quantity'] * $item['unit_price'];
         }
 
         $purchase = \App\Models\Purchase::create([
@@ -485,11 +485,11 @@ class ApiController extends Controller
         ]);
 
         foreach ($validated['items'] as $item) {
-            $subtotal = $item['quantity'] * $item['unit_cost'];
+            $subtotal = $item['quantity'] * $item['unit_price'];
             $purchase->items()->create([
                 'product_id' => $item['product_id'],
                 'quantity' => $item['quantity'],
-                'unit_cost' => $item['unit_cost'],
+                'unit_price' => $item['unit_price'],
                 'subtotal' => $subtotal,
             ]);
 
@@ -499,6 +499,25 @@ class ApiController extends Controller
         }
 
         return response()->json(['purchase' => $purchase, 'total' => $totalAmount]);
+    }
+
+    public function payPurchase(Request $request, $id)
+    {
+        $user = $request->user();
+        if (!in_array($user->role?->slug, ['admin', 'proprietaire'])) {
+            return response()->json(['message' => 'Non autorisé.'], 403);
+        }
+
+        $purchase = \App\Models\Purchase::where('store_id', $user->store_id)->findOrFail($id);
+        $amountPaid = (float) $request->input('amount_paid', 0);
+        $purchase->amount_paid = $amountPaid;
+        $purchase->status = $amountPaid >= (float) $purchase->total_amount ? 'completed' : 'partial';
+        $purchase->save();
+
+        return response()->json([
+            'amount_paid' => $purchase->amount_paid,
+            'status' => $purchase->status,
+        ]);
     }
 
     public function getSuppliers(Request $request)
