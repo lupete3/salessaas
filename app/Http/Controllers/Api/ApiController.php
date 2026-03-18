@@ -394,4 +394,232 @@ class ApiController extends Controller
             ] : null,
         ]);
     }
+
+    public function getUsers(Request $request)
+    {
+        $user = $request->user();
+        if (!in_array($user->role?->slug, ['admin', 'proprietaire'])) {
+            return response()->json(['message' => 'Non autorisé.'], 403);
+        }
+
+        $users = User::where('store_id', $user->store_id)
+            ->with('role')
+            ->get()
+            ->map(function ($u) {
+                return [
+                    'id' => $u->id,
+                    'name' => $u->name,
+                    'email' => $u->email,
+                    'role' => $u->role?->name,
+                    'is_active' => $u->is_active,
+                ];
+            });
+
+        return response()->json(['users' => $users]);
+    }
+
+    public function getPurchases(Request $request)
+    {
+        $user = $request->user();
+        if (!in_array($user->role?->slug, ['admin', 'proprietaire'])) {
+            return response()->json(['message' => 'Non autorisé.'], 403);
+        }
+
+        $purchases = \App\Models\Purchase::where('store_id', $user->store_id)
+            ->with(['supplier', 'items.product'])
+            ->latest()
+            ->limit(50)
+            ->get()
+            ->map(function ($p) {
+                return [
+                    'id' => $p->id,
+                    'date' => $p->purchase_date->toIso8601String(),
+                    'number' => $p->purchase_number,
+                    'supplier_name' => $p->supplier?->name,
+                    'total_amount' => (float) $p->total_amount,
+                    'amount_paid' => (float) $p->amount_paid,
+                    'status' => $p->status,
+                    'items' => $p->items->map(function ($i) {
+                        return [
+                            'product_name' => $i->product?->name,
+                            'quantity' => $i->quantity,
+                            'unit_cost' => (float) $i->unit_cost,
+                            'subtotal' => (float) $i->subtotal,
+                        ];
+                    }),
+                ];
+            });
+
+        return response()->json(['purchases' => $purchases]);
+    }
+
+    public function getSuppliers(Request $request)
+    {
+        $user = $request->user();
+        if (!in_array($user->role?->slug, ['admin', 'proprietaire'])) {
+            return response()->json(['message' => 'Non autorisé.'], 403);
+        }
+
+        $suppliers = \App\Models\Supplier::where('store_id', $user->store_id)
+            ->get()
+            ->map(function ($s) {
+                return [
+                    'id' => $s->id,
+                    'name' => $s->name,
+                    'phone' => $s->phone,
+                    'email' => $s->email,
+                    'address' => $s->address,
+                ];
+            });
+
+        return response()->json(['suppliers' => $suppliers]);
+    }
+
+    public function getInventories(Request $request)
+    {
+        $user = $request->user();
+        if (!in_array($user->role?->slug, ['admin', 'proprietaire'])) {
+            return response()->json(['message' => 'Non autorisé.'], 403);
+        }
+
+        // Get stock movements or current stock status with buying prices
+        $products = Product::where('store_id', $user->store_id)
+            ->get()
+            ->map(function ($p) {
+                return [
+                    'id' => $p->id,
+                    'name' => $p->name,
+                    'stock' => $p->stock_quantity,
+                    'buying_price' => $p->purchase_price,
+                    'selling_price' => $p->selling_price,
+                    'total_valuation' => $p->stock_quantity * $p->purchase_price,
+                ];
+            });
+
+        return response()->json(['inventory' => $products]);
+    }
+
+    public function getAdminStats(Request $request)
+    {
+        $user = $request->user();
+        if (!in_array($user->role?->slug, ['admin', 'proprietaire'])) {
+            return response()->json(['message' => 'Non autorisé.'], 403);
+        }
+
+        $today = now()->startOfDay();
+        $store_id = $user->store_id;
+
+        $sales = \App\Models\Sale::where('store_id', $store_id)
+            ->where('created_at', '>=', $today)
+            ->get();
+
+        $revenue = $sales->sum('final_amount');
+        $expenses = \App\Models\Expense::where('store_id', $store_id)
+            ->where('created_at', '>=', $today)
+            ->sum('amount');
+
+        // Calculate Profit (Revenue - Cost of goods sold)
+        $total_cost = 0;
+        foreach ($sales as $sale) {
+            foreach ($sale->items as $item) {
+                $total_cost += $item->quantity * ($item->product?->purchase_price ?? 0);
+            }
+        }
+
+        $profit = $revenue - $total_cost - $expenses;
+
+        // Global Stock Valuation
+        $stock_valuation = \App\Models\Product::where('store_id', $store_id)
+            ->get()
+            ->sum(fn($p) => $p->stock_quantity * $p->purchase_price);
+
+        return response()->json([
+            'revenue' => (float) $revenue,
+            'expenses' => (float) $expenses,
+            'profit' => (float) $profit,
+            'stock_valuation' => (float) $stock_valuation,
+            'sales_count' => $sales->count(),
+        ]);
+    }
+
+    public function getRoles(Request $request)
+    {
+        return response()->json(['roles' => \App\Models\Role::all(['id', 'name', 'slug'])]);
+    }
+
+    public function storeUser(Request $request)
+    {
+        $user = $request->user();
+        if (!in_array($user->role?->slug, ['admin', 'proprietaire'])) {
+            return response()->json(['message' => 'Non autorisé.'], 403);
+        }
+
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|unique:users,email',
+            'password' => 'required|string|min:6',
+            'role_id' => 'required|exists:roles,id',
+        ]);
+
+        $newUser = User::create([
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'password' => bcrypt($validated['password']),
+            'role_id' => $validated['role_id'],
+            'store_id' => $user->store_id,
+            'is_active' => true,
+        ]);
+
+        return response()->json(['user' => $newUser, 'message' => 'Utilisateur créé.']);
+    }
+
+    public function toggleUser(Request $request, $id)
+    {
+        $user = $request->user();
+        if (!in_array($user->role?->slug, ['admin', 'proprietaire'])) {
+            return response()->json(['message' => 'Non autorisé.'], 403);
+        }
+
+        $target = User::where('store_id', $user->store_id)->findOrFail($id);
+        $target->is_active = !$target->is_active;
+        $target->save();
+
+        return response()->json(['is_active' => $target->is_active]);
+    }
+
+    public function storeProduct(Request $request)
+    {
+        $user = $request->user();
+        if (!in_array($user->role?->slug, ['admin', 'proprietaire'])) {
+            return response()->json(['message' => 'Non autorisé.'], 403);
+        }
+
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'purchase_price' => 'required|numeric',
+            'selling_price' => 'required|numeric',
+            'stock_quantity' => 'required|integer',
+            'min_stock' => 'nullable|integer',
+        ]);
+
+        $product = Product::create(array_merge($validated, [
+            'store_id' => $user->store_id,
+            'status' => true,
+        ]));
+
+        return response()->json(['product' => $product]);
+    }
+
+    public function updateProduct(Request $request, $id)
+    {
+        $user = $request->user();
+        if (!in_array($user->role?->slug, ['admin', 'proprietaire'])) {
+            return response()->json(['message' => 'Non autorisé.'], 403);
+        }
+
+        $product = Product::where('store_id', $user->store_id)->findOrFail($id);
+        $product->update($request->only(['name', 'purchase_price', 'selling_price', 'stock_quantity', 'min_stock']));
+
+        return response()->json(['product' => $product]);
+    }
 }
