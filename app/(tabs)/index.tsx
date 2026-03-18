@@ -18,9 +18,10 @@ function genLocalId(): string {
 }
 
 export default function POSScreen() {
-  const { t } = useLangStore();
+  const { t, lang } = useLangStore();
   const { products, cart, addToCart, removeFromCart, updateCartQty, clearCart, cartTotal, queueSale, customers } = useAppStore();
   const { store } = useAuthStore();
+  const currency = store?.currency ?? 'CDF';
   const [search, setSearch] = useState('');
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('cash');
   const [discount, setDiscount] = useState('0');
@@ -65,7 +66,7 @@ export default function POSScreen() {
   const handleAddToCart = (product: Product) => {
     const success = addToCart(product, 1);
     if (!success) {
-      Alert.alert('Stock insuffisant', `Il ne reste que ${product.stock} unité(s) de ${product.name} en stock.`);
+      Alert.alert(t('pos.stock_error_title'), t('pos.stock_error_msg', { stock: product.stock, name: product.name }));
     }
   };
 
@@ -76,13 +77,13 @@ export default function POSScreen() {
     
     const success = updateCartQty(productId, newQty);
     if (!success && change > 0) {
-       Alert.alert('Stock', `Maximum disponible : ${item.product.stock}`);
+       Alert.alert(t('shared.validation'), t('pos.stock_max', { stock: item.product.stock }));
     }
   };
 
   const handleCheckout = () => {
     if (cart.length === 0) {
-      Alert.alert('Panier vide', 'Ajoutez des produits avant de valider.');
+      Alert.alert(t('pos.cart_empty'), t('pos.cart_empty_msg') || t('pos.cart_empty'));
       return;
     }
     setCartModalVisible(false);
@@ -111,8 +112,8 @@ export default function POSScreen() {
 
     if (debtAmount > 0.009 && !selectedCustomer) {
       Alert.alert(
-        'Client requis', 
-        `Cette vente laisse un solde impayé de ${debtAmount.toFixed(2)} ${currency}. Veuillez sélectionner un client pour enregistrer cette dette.`
+        t('pos.choose_customer'), 
+        t('pos.debt_recorded') + `: ${debtAmount.toFixed(2)} ${currency}. ` + t('pos.customer_optional')
       );
       return;
     }
@@ -169,80 +170,82 @@ export default function POSScreen() {
         <head>
           <meta charset="utf-8" />
           <style>
-            body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; padding: 10px; color: #111; max-width: 320px; margin: 0 auto; }
-            .header { text-align: center; margin-bottom: 15px; border-bottom: 1px dashed #ccc; padding-bottom: 10px; }
-            .title { font-size: 20px; font-weight: bold; margin: 0; text-transform: uppercase; }
-            .subtitle { font-size: 14px; color: #444; margin: 5px 0 0 0; font-weight: bold; }
-            .store-info { font-size: 11px; color: #555; margin-top: 5px; line-height: 1.3; }
+            body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; padding: 0; margin: 0; color: #000; width: 100%; }
+            .receipt-container { padding: 10px; width: 100%; box-sizing: border-box; }
+            .header { text-align: center; margin-bottom: 12px; border-bottom: 2px solid #000; padding-bottom: 10px; }
+            .title { font-size: 18px; font-weight: bold; margin: 0; text-transform: uppercase; }
+            .subtitle { font-size: 13px; margin: 4px 0 0 0; font-weight: bold; }
+            .store-info { font-size: 11px; margin-top: 5px; line-height: 1.3; }
             .sale-info { font-size: 12px; margin-bottom: 15px; line-height: 1.4; border-bottom: 1px solid #eee; padding-bottom: 10px; }
-            table { width: 100%; border-collapse: collapse; margin-bottom: 10px; font-size: 12px; }
-            th { text-align: left; border-bottom: 1px solid #333; padding: 5px 0; }
-            td { padding: 6px 0; border-bottom: 1px solid #eee; }
+            table { width: 100%; border-collapse: collapse; margin-bottom: 12px; font-size: 12px; }
+            th { text-align: left; border-bottom: 1px solid #000; padding: 6px 0; }
+            td { padding: 6px 0; border-bottom: 1px dotted #eee; }
             .right { text-align: right; }
-            .totals { margin-top: 10px; font-size: 13px; text-align: right; line-height: 1.5; }
-            .grand-total { font-size: 18px; font-weight: bold; padding-top: 8px; border-top: 1px solid #333; margin-top: 8px; }
-            .footer { text-align: center; font-size: 11px; color: #777; margin-top: 30px; border-top: 1px dashed #ccc; padding-top: 15px; }
+            .totals { margin-top: 10px; font-size: 12px; text-align: right; line-height: 1.5; }
+            .grand-total { font-size: 16px; font-weight: bold; padding-top: 8px; border-top: 2px solid #000; margin-top: 8px; }
+            .footer { text-align: center; font-size: 10px; color: #666; margin-top: 25px; border-top: 1px dashed #ccc; padding-top: 12px; }
             @media print { body { padding: 0; } }
           </style>
         </head>
         <body>
-          <div class="header">
-            ${store?.logo ? `<img src="${store.logo}" style="max-height: 60px; margin-bottom: 10px;" />` : ''}
-            <h1 class="title">${store?.name ?? 'NOTRE MAGASIN'}</h1>
-            <p class="subtitle">REÇU DE CAISSE</p>
-            <div class="store-info">
-              ${store?.address ? `<div>${store.address}</div>` : ''}
-              ${store?.phone ? `<div>Tél: ${store.phone}</div>` : ''}
-              ${store?.email ? `<div>Email: ${store.email}</div>` : ''}
-              ${store?.license_number ? `<div>ID: ${store.license_number}</div>` : ''}
-            </div>
-          </div>
-          
-          <div class="sale-info">
-            <div><strong>Date :</strong> ${new Date(sale.sold_at).toLocaleString('fr-FR')}</div>
-            <div><strong>N° Réf :</strong> ${sale.local_id}</div>
-            <div><strong>Paiement :</strong> ${sale.payment_method.toUpperCase()}</div>
-            ${sale.customer_name ? `
-              <div style="margin-top: 8px; padding-top: 8px; border-top: 1px dotted #ccc;">
-                <strong>Client :</strong> ${sale.customer_name}<br/>
-                ${sale.customer_phone ? `<strong>Tél :</strong> ${sale.customer_phone}` : ''}
+          <div class="receipt-container">
+            <div class="header">
+              ${store?.logo ? `<img src="${store.logo}" style="max-height: 60px; margin-bottom: 10px;" />` : ''}
+              <h1 class="title">${store?.name ?? t('pos.receipt_title')}</h1>
+              <p class="subtitle">${t('pos.receipt_subtitle')}</p>
+              <div class="store-info">
+                ${store?.address ? `<div>${store.address}</div>` : ''}
+                ${store?.phone ? `<div>${t('pos.phone')}: ${store.phone}</div>` : ''}
+                ${store?.email ? `<div>Email: ${store.email}</div>` : ''}
               </div>
-            ` : ''}
-          </div>
-          
-          <table>
-            <thead>
-              <tr>
-                <th>Désignation</th>
-                <th class="right">Qté</th>
-                <th class="right">Total</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${sale.items.map(i => `
-                <tr>
-                  <td>${i.product_name}<br/><small>${parseFloat(i.unit_price as any).toFixed(2)}</small></td>
-                  <td class="right">${i.quantity}</td>
-                  <td class="right">${parseFloat(i.subtotal as any).toFixed(2)}</td>
-                </tr>
-              `).join('')}
-            </tbody>
-          </table>
-          
-          <div class="totals">
-            <div>Sous-total : ${sale.total_amount.toFixed(2)} ${currency}</div>
-            ${sale.discount > 0 ? `<div>Remise : -${sale.discount.toFixed(2)} ${currency}</div>` : ''}
-            <div class="grand-total">TOTAL : ${sale.final_amount.toFixed(2)} ${currency}</div>
-            <div style="margin-top: 8px;">
-              Reçu : ${sale.amount_paid.toFixed(2)} ${currency}<br/>
-              ${sale.change_given > 0 ? `Rendu : ${sale.change_given.toFixed(2)} ${currency}` : ''}
-              ${(sale.final_amount - sale.amount_paid) > 0.01 ? `<strong>Reste (Dette) : ${(sale.final_amount - sale.amount_paid).toFixed(2)} ${currency}</strong>` : ''}
             </div>
-          </div>
-          
-          <div class="footer">
-            <p>Merci de votre visite et à bientôt !</p>
-            <p style="font-size: 9px; margin-top: 4px;">Facture générée par SalesSaaS</p>
+            
+            <div class="sale-info">
+              <div><strong>${t('pos.date')} :</strong> ${new Date(sale.sold_at).toLocaleString(lang === 'en' ? 'en-US' : 'fr-FR')}</div>
+              <div><strong>${t('pos.ref')} :</strong> ${sale.local_id}</div>
+              <div><strong>${t('pos.payment_method')} :</strong> ${t('pos.pay_methods.' + (sale.payment_method || 'cash').toLowerCase())}</div>
+              ${sale.customer_name ? `
+                <div style="margin-top: 10px; padding-top: 10px; border-top: 1px dotted #eee;">
+                  <strong>${t('pos.customer')} :</strong> ${sale.customer_name}<br/>
+                  ${sale.customer_phone ? `<strong>${t('pos.phone')} :</strong> ${sale.customer_phone}` : ''}
+                </div>
+              ` : ''}
+            </div>
+            
+            <table>
+              <thead>
+                <tr>
+                  <th>${t('pos.designation')}</th>
+                  <th class="right">${t('pos.qty')}</th>
+                  <th class="right">${t('pos.total')}</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${sale.items.map(i => `
+                  <tr>
+                    <td>${i.product_name}<br/><small style="color: #666">${parseFloat(String(i.unit_price || 0)).toFixed(2)} ${currency}</small></td>
+                    <td class="right">${i.quantity}</td>
+                    <td class="right">${parseFloat(String(i.subtotal || 0)).toFixed(2)}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+            
+            <div class="totals">
+              <div>${t('pos.subtotal')} : ${parseFloat(String(sale.total_amount || 0)).toFixed(2)} ${currency}</div>
+              ${sale.discount > 0 ? `<div>${t('pos.discount')} : -${parseFloat(String(sale.discount || 0)).toFixed(2)} ${currency}</div>` : ''}
+              <div class="grand-total">${t('pos.total').toUpperCase()} : ${parseFloat(String(sale.final_amount || 0)).toFixed(2)} ${currency}</div>
+              <div style="margin-top: 12px; border-top: 1px dotted #eee; padding-top: 10px;">
+                ${t('pos.received')} : ${parseFloat(String(sale.amount_paid || 0)).toFixed(2)} ${currency}<br/>
+                ${sale.change_given > 0 ? `${t('pos.rendu')} : ${parseFloat(String(sale.change_given || 0)).toFixed(2)} ${currency}<br/>` : ''}
+                ${(sale.final_amount - sale.amount_paid) > 0.01 ? `<strong>${t('pos.reste_dette')} : ${parseFloat(String(sale.final_amount - sale.amount_paid)).toFixed(2)} ${currency}</strong>` : ''}
+              </div>
+            </div>
+            
+            <div class="footer">
+              <p>${t('pos.footer_msg')}</p>
+              <p style="font-size: 10px; margin-top: 6px;">${t('pos.generated_by')}</p>
+            </div>
           </div>
         </body>
       </html>
@@ -253,9 +256,10 @@ export default function POSScreen() {
     if (!lastSale) return;
     try {
       const html = generateReceiptHTML(lastSale);
-      await Print.printAsync({ html });
+      const { uri } = await Print.printToFileAsync({ html, width: 280 });
+      await Print.printAsync({ uri });
     } catch (e) {
-      Alert.alert('Erreur', 'Impossible d\'imprimer le reçu.');
+      Alert.alert(t('shared.error'), t('pos.print_error'));
     }
   };
 
@@ -263,15 +267,15 @@ export default function POSScreen() {
     if (!lastSale) return;
     try {
       const html = generateReceiptHTML(lastSale);
-      const { uri } = await Print.printToFileAsync({ html, width: 280 });
+      const { uri } = await Print.printToFileAsync({ html, width: 220 });
       const isAvailable = await Sharing.isAvailableAsync();
       if (isAvailable) {
-        await Sharing.shareAsync(uri, { UTI: '.pdf', mimeType: 'application/pdf', dialogTitle: 'Partager le reçu' });
+        await Sharing.shareAsync(uri, { UTI: '.pdf', mimeType: 'application/pdf', dialogTitle: t('pos.receipt_title') });
       } else {
-        Alert.alert('Oups', 'Le partage n\'est pas disponible sur cet appareil.');
+        Alert.alert(t('shared.attention'), t('pos.error_share'));
       }
     } catch (e) {
-      Alert.alert('Erreur', 'Impossible de générer le PDF.');
+      Alert.alert(t('shared.error'), t('pos.pdf_error'));
     }
   };
   // -- END PRINT --
@@ -282,8 +286,8 @@ export default function POSScreen() {
       <TouchableOpacity style={styles.productCard} onPress={() => handleAddToCart(item)}>
         <View style={styles.productInfo}>
           <Text style={styles.productName} numberOfLines={2}>{item.name}</Text>
-          <Text style={styles.productSub}>{item.description || 'Produit'} · {item.unit}</Text>
-          <Text style={styles.productStock}>Stock: {item.stock}</Text>
+          <Text style={styles.productSub}>{(item.description || t('pos.empty').split(' ')[0])} · {item.unit}</Text>
+          <Text style={styles.productStock}>{t('pos.stock')}: {item.stock}</Text>
         </View>
         <View style={styles.productRight}>
           <Text style={styles.productPrice}>{parseFloat(item.selling_price).toFixed(2)} {currency}</Text>
@@ -323,7 +327,7 @@ export default function POSScreen() {
           renderItem={renderProduct}
           style={styles.productList}
           contentContainerStyle={{ paddingBottom: 100 }}
-          ListEmptyComponent={<Text style={styles.empty}>Aucun produit disponible.</Text>}
+          ListEmptyComponent={<Text style={styles.empty}>{t('pos.empty')}</Text>}
         />
       </View>
 
@@ -353,7 +357,7 @@ export default function POSScreen() {
         <View style={styles.modalOverlay}>
           <View style={styles.cartModalCard}>
             <View style={styles.cartModalHeader}>
-              <Text style={styles.cartModalTitle}>Panier ({cart.length})</Text>
+              <Text style={styles.cartModalTitle}>{t('pos.cart_full_title', { count: cart.length })}</Text>
               <TouchableOpacity onPress={() => setCartModalVisible(false)} style={styles.closeBtn}>
                 <Ionicons name="close" size={24} color="#aaa" />
               </TouchableOpacity>
@@ -382,18 +386,18 @@ export default function POSScreen() {
                 </View>
               ))}
               {cart.length === 0 && (
-                <Text style={styles.empty}>Le panier est vide.</Text>
+                <Text style={styles.empty}>{t('pos.cart_empty')}</Text>
               )}
             </ScrollView>
 
             <View style={styles.cartModalFooter}>
               <View style={styles.totalRowFixed}>
-                <Text style={styles.totalLabel}>Total :</Text>
+                <Text style={styles.totalLabel}>{t('pos.total')} :</Text>
                 <Text style={styles.totalValueLG}>{total.toFixed(2)} {currency}</Text>
               </View>
               <TouchableOpacity style={styles.checkoutBtnLG} onPress={handleCheckout}>
                 <Ionicons name="checkmark-circle-outline" size={22} color="#fff" />
-                <Text style={styles.checkoutBtnTextLG}>Valider la vente</Text>
+                <Text style={styles.checkoutBtnTextLG}>{t('pos.validate_sale')}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -410,10 +414,10 @@ export default function POSScreen() {
             <View style={styles.modalOverlay}>
               <View style={styles.modalCard}>
                 <ScrollView contentContainerStyle={{ paddingBottom: 40 }} showsVerticalScrollIndicator={false}>
-                  <Text style={styles.modalTitle}>Confirmer la vente</Text>
-                  <Text style={styles.modalTotal}>Total : ${total.toFixed(2)} ${currency}</Text>
+                  <Text style={styles.modalTitle}>{t('pos.confirm_sale')}</Text>
+                  <Text style={styles.modalTotal}>{t('pos.total')} : {total.toFixed(2)} {currency}</Text>
 
-            <Text style={styles.modalLabel}>Remise ({currency})</Text>
+            <Text style={styles.modalLabel}>{t('pos.discount')} ({currency})</Text>
             <TextInput
               style={styles.modalInput}
               keyboardType="numeric"
@@ -423,7 +427,7 @@ export default function POSScreen() {
               placeholderTextColor="#888"
             />
             
-            <Text style={styles.modalLabel}>Montant Reçu ({currency})</Text>
+            <Text style={styles.modalLabel}>{t('pos.amount_received')} ({currency})</Text>
             <TextInput
               style={styles.modalInput}
               keyboardType="numeric"
@@ -433,15 +437,15 @@ export default function POSScreen() {
               placeholderTextColor="#888"
             />
 
-            <Text style={styles.modalFinal}>Montant final : {finalAmount.toFixed(2)} {currency}</Text>
-            {changeGiven > 0 && <Text style={[styles.modalFinal, { backgroundColor: 'rgba(52,152,219,0.1)', color: '#3498db' }]}>Monnaie à rendre : {changeGiven.toFixed(2)} {currency}</Text>}
+            <Text style={styles.modalFinal}>{t('pos.final_amount')} : {finalAmount.toFixed(2)} {currency}</Text>
+            {changeGiven > 0 && <Text style={[styles.modalFinal, { backgroundColor: 'rgba(52,152,219,0.1)', color: '#3498db' }]}>{t('pos.rendu')} : {changeGiven.toFixed(2)} {currency}</Text>}
             {finalAmount > (parseFloat(amountReceived) || 0) && selectedCustomer && (
               <Text style={[styles.modalFinal, { backgroundColor: 'rgba(231,76,60,0.1)', color: '#e74c3c' }]}>
-                Dette à enregistrer : {(finalAmount - (parseFloat(amountReceived) || 0)).toFixed(2)} {currency}
+                {t('pos.debt_to_record')} : {(finalAmount - (parseFloat(amountReceived) || 0)).toFixed(2)} {currency}
               </Text>
             )}
 
-            <Text style={styles.modalLabel}>Mode de paiement</Text>
+            <Text style={styles.modalLabel}>{t('pos.payment_method')}</Text>
             <View style={styles.paymentMethods}>
               {(['cash', 'mobile_money', 'insurance', 'credit'] as PaymentMethod[]).map((pm) => (
                 <TouchableOpacity
@@ -450,20 +454,20 @@ export default function POSScreen() {
                   onPress={() => setPaymentMethod(pm)}
                 >
                   <Text style={[styles.pmBtnText, paymentMethod === pm && styles.pmBtnTextActive]}>
-                    {pm === 'cash' ? '💵 Cash' : pm === 'mobile_money' ? '📱 Mobile' : pm === 'insurance' ? '🏥 Assurance' : '📋 Crédit'}
+                    {t('pos.pay_methods.' + pm)}
                   </Text>
                 </TouchableOpacity>
               ))}
             </View>
 
-            <Text style={styles.modalLabel}>Client (Facultatif, requis pour crédit)</Text>
+            <Text style={styles.modalLabel}>{t('pos.customer')} ({t('pos.optional_for_credit')})</Text>
             <TouchableOpacity 
               style={styles.customerPicker} 
               onPress={() => setCustomerModalVisible(true)}
             >
               <Ionicons name="person-outline" size={18} color="#888" />
               <Text style={[styles.customerPickerText, !selectedCustomer && { color: '#666' }]}>
-                {selectedCustomer ? selectedCustomer.name : 'Sélectionner un client...'}
+                {selectedCustomer ? selectedCustomer.name : t('pos.choose_customer')}
               </Text>
               {selectedCustomer && (
                 <TouchableOpacity onPress={() => setSelectedCustomer(null)}>
@@ -472,22 +476,22 @@ export default function POSScreen() {
               )}
             </TouchableOpacity>
 
-            <Text style={styles.modalLabel}>Notes</Text>
+            <Text style={styles.modalLabel}>{t('pos.remarks')}</Text>
             <TextInput
               style={[styles.modalInput, { height: 60 }]}
               value={notes}
               onChangeText={setNotes}
               multiline
-              placeholder="Remarques..."
+              placeholder={t('pos.remarks_placeholder')}
               placeholderTextColor="#888"
             />
 
                   <View style={styles.modalButtons}>
                     <TouchableOpacity style={styles.cancelBtn} onPress={() => setCheckoutVisible(false)}>
-                      <Text style={{ color: '#888', fontWeight: '600' }}>Annuler</Text>
+                      <Text style={{ color: '#888', fontWeight: '600' }}>{t('shared.cancel')}</Text>
                     </TouchableOpacity>
                     <TouchableOpacity style={styles.confirmBtn} onPress={confirmSale}>
-                      <Text style={{ color: '#fff', fontWeight: 'bold' }}>Confirmer</Text>
+                      <Text style={{ color: '#fff', fontWeight: 'bold' }}>{t('shared.confirm')}</Text>
                     </TouchableOpacity>
                   </View>
                 </ScrollView>
@@ -502,7 +506,7 @@ export default function POSScreen() {
         <View style={styles.modalOverlay}>
           <View style={styles.modalCard}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Choisir un client</Text>
+              <Text style={styles.modalTitle}>{t('pos.choose_customer')}</Text>
               <TouchableOpacity onPress={() => setCustomerModalVisible(false)}>
                 <Ionicons name="close" size={24} color="#aaa" />
               </TouchableOpacity>
@@ -511,17 +515,17 @@ export default function POSScreen() {
             <View style={styles.searchRow}>
               <Ionicons name="search-outline" size={18} color="#888" />
               <TextInput
-                style={styles.searchInput}
-                placeholder="Rechercher..."
-                placeholderTextColor="#666"
-                value={customerSearch}
-                onChangeText={setCustomerSearch}
-              />
+              style={styles.searchInput}
+              placeholder={t('pos.search_placeholder') || 'Rechercher...'}
+              placeholderTextColor="#888"
+              value={customerSearch}
+              onChangeText={setCustomerSearch}
+            />
             </View>
 
             <FlatList
               data={filteredCustomers}
-              keyExtractor={(item) => item.local_id || String(item.id)}
+              keyExtractor={(item) => item.local_id}
               renderItem={({ item }) => (
                 <TouchableOpacity 
                   style={styles.customerItem} 
@@ -531,11 +535,10 @@ export default function POSScreen() {
                   }}
                 >
                   <Text style={styles.customerName}>{item.name}</Text>
-                  {item.phone && <Text style={styles.customerPhone}>{item.phone}</Text>}
+                  <Text style={styles.customerPhone}>{item.phone || t('pos.phone').split(' ')[0]}</Text>
                 </TouchableOpacity>
               )}
-              style={{ maxHeight: 400 }}
-              ListEmptyComponent={<Text style={styles.empty}>Aucun client trouvé.</Text>}
+              ListEmptyComponent={<Text style={styles.empty}>{t('pos.no_customer_found')}</Text>}
             />
           </View>
         </View>
@@ -548,23 +551,23 @@ export default function POSScreen() {
             <View style={styles.successIcon}>
               <Ionicons name="checkmark-circle" size={60} color="#2ecc71" />
             </View>
-            <Text style={styles.receiptTitle}>Vente Réussie !</Text>
-            <Text style={styles.receiptSub}>La vente a été enregistrée avec succès.</Text>
+            <Text style={styles.receiptTitle}>{t('pos.success')}</Text>
+            <Text style={styles.receiptSub}>{t('pos.sale_success_msg')}</Text>
 
             <View style={styles.receiptActions}>
               <TouchableOpacity style={styles.printBtn} onPress={handlePrint}>
                 <Ionicons name="print-outline" size={20} color="#fff" />
-                <Text style={styles.printBtnText}>Imprimer</Text>
+                <Text style={styles.printBtnText}>{t('pos.print')}</Text>
               </TouchableOpacity>
               
               <TouchableOpacity style={styles.pdfBtn} onPress={handleSharePDF}>
                 <Ionicons name="document-text-outline" size={20} color="#1a73e8" />
-                <Text style={styles.pdfBtnText}>Sauver PDF</Text>
+                <Text style={styles.pdfBtnText}>{t('pos.pdf')}</Text>
               </TouchableOpacity>
             </View>
 
             <TouchableOpacity style={styles.nextCustomerBtn} onPress={() => setReceiptVisible(false)}>
-              <Text style={styles.nextCustomerText}>Suivant</Text>
+              <Text style={styles.nextCustomerText}>{t('pos.next')}</Text>
             </TouchableOpacity>
           </View>
         </View>

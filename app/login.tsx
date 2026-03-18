@@ -17,8 +17,10 @@ import { StatusBar } from 'expo-status-bar';
 import { useRouter } from 'expo-router';
 
 import { SyncService } from '../services/SyncService';
+import { useLangStore } from '../store/langStore';
 
 export default function LoginScreen() {
+  const { t } = useLangStore();
   const [apiUrl, setApiUrl] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -27,7 +29,7 @@ export default function LoginScreen() {
 
   const handleLogin = async () => {
     if (!apiUrl.trim() || !email.trim() || !password) {
-      Alert.alert('Champs requis', 'Veuillez remplir tous les champs.');
+      Alert.alert(t('auth.required_fields'), t('auth.fill_all'));
       return;
     }
 
@@ -36,7 +38,7 @@ export default function LoginScreen() {
     setLoading(false);
 
     if (errorMsg) {
-      Alert.alert('Erreur de connexion', errorMsg);
+      Alert.alert(t('auth.login_error'), errorMsg);
     } else {
       // Sync initial data (products, customers) after successful login
       SyncService.pullData().catch(() => {});
@@ -63,7 +65,7 @@ export default function LoginScreen() {
               <Text style={styles.logoEmoji}>📦</Text>
             </View>
             <Text style={styles.title}>SalesSaaS</Text>
-            <Text style={styles.subtitle}>Gestion hors-ligne · ERP & POS</Text>
+            <Text style={styles.subtitle}>{t('auth.subtitle')}</Text>
           </View>
 
           {/* Card */}
@@ -71,10 +73,10 @@ export default function LoginScreen() {
             <BlurView intensity={25} tint="dark" style={styles.card}>
 
               {/* API URL */}
-              <Text style={styles.label}>URL du serveur</Text>
+              <Text style={styles.label}>{t('auth.server_url')}</Text>
               <TextInput
                 style={styles.input}
-                placeholder="https://votre-commerce.com"
+                placeholder={t('auth.url_placeholder')}
                 placeholderTextColor="#888"
                 value={apiUrl}
                 onChangeText={setApiUrl}
@@ -85,10 +87,10 @@ export default function LoginScreen() {
               />
 
               {/* Email */}
-              <Text style={styles.label}>Adresse e-mail</Text>
+              <Text style={styles.label}>{t('auth.email')}</Text>
               <TextInput
                 style={styles.input}
-                placeholder="gestionnaire@exemple.com"
+                placeholder={t('auth.email_placeholder')}
                 placeholderTextColor="#888"
                 value={email}
                 onChangeText={setEmail}
@@ -99,7 +101,7 @@ export default function LoginScreen() {
               />
 
               {/* Password */}
-              <Text style={styles.label}>Mot de passe</Text>
+              <Text style={styles.label}>{t('auth.password')}</Text>
               <TextInput
                 style={styles.input}
                 placeholder="••••••••"
@@ -122,12 +124,12 @@ export default function LoginScreen() {
                 {loading ? (
                   <ActivityIndicator color="#fff" />
                 ) : (
-                  <Text style={styles.buttonText}>Se Connecter</Text>
+                  <Text style={styles.buttonText}>{t('auth.login_btn')}</Text>
                 )}
               </TouchableOpacity>
 
               <Text style={styles.hint}>
-                💡 L'application fonctionne hors-ligne. Synchronisez quand vous avez internet. (Configuration: Saisir l'URL de votre serveur sans /api à la fin)
+                {t('auth.hint')}
               </Text>
             </BlurView>
           </View>

@@ -4,13 +4,15 @@ import {
   StyleSheet, SafeAreaView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useAppStore, Product } from '../../store/appStore';
 import { useAuthStore } from '../../store/authStore';
+import { useLangStore } from '../../store/langStore';
+import { useAppStore, Product } from '../../store/appStore';
 
 export default function ProductsScreen() {
+  const { t } = useLangStore();
   const { products } = useAppStore();
   const { store } = useAuthStore();
-  const currency = 'CDF'; // Simplified or use store.currency if added
+  const currency = store?.currency || 'CDF';
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<'all' | 'low' | 'out'>('all');
 
@@ -56,7 +58,7 @@ export default function ProductsScreen() {
         <Ionicons name="search-outline" size={18} color="#888" style={{ marginRight: 8 }} />
         <TextInput
           style={styles.searchInput}
-          placeholder="Nom, code-barre..."
+          placeholder={t('explore.search_placeholder')}
           placeholderTextColor="#666"
           value={search}
           onChangeText={setSearch}
@@ -72,7 +74,7 @@ export default function ProductsScreen() {
             onPress={() => setFilter(f)}
           >
             <Text style={[styles.filterText, filter === f && styles.filterTextActive]}>
-              {f === 'all' ? '📦 Tous' : f === 'low' ? '⚠️ Stock faible' : '🚫 Rupture'}
+              {f === 'all' ? t('explore.filter_all') : f === 'low' ? t('explore.filter_low') : t('explore.filter_out')}
             </Text>
           </TouchableOpacity>
         ))}
@@ -80,9 +82,9 @@ export default function ProductsScreen() {
 
       {/* Stats */}
       <View style={styles.statsRow}>
-        <Text style={styles.statsText}>{filtered.length} produit(s)</Text>
+        <Text style={styles.statsText}>{t('explore.count_products', { count: filtered.length })}</Text>
         <Text style={styles.statsText}>
-          {products.filter(p => p.stock <= 0).length} rupture(s)
+          {t('explore.count_out', { count: products.filter(p => p.stock <= 0).length })}
         </Text>
       </View>
 
@@ -90,7 +92,7 @@ export default function ProductsScreen() {
         data={filtered}
         keyExtractor={(p) => String(p.id)}
         renderItem={renderItem}
-        ListEmptyComponent={<Text style={styles.empty}>Aucun produit trouvé.</Text>}
+        ListEmptyComponent={<Text style={styles.empty}>{t('explore.no_product')}</Text>}
         contentContainerStyle={{ paddingBottom: 20 }}
       />
     </SafeAreaView>

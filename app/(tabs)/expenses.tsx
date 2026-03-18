@@ -1,15 +1,17 @@
 import React, { useState, useMemo } from 'react';
 import {
   View, Text, FlatList, TextInput, TouchableOpacity,
-  StyleSheet, SafeAreaView, Alert
+  StyleSheet, SafeAreaView, Alert, StatusBar, Platform
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppStore, Expense } from '../../store/appStore';
 import { useAuthStore } from '../../store/authStore';
+import { useLangStore } from '../../store/langStore';
 
-const CATEGORIES = ['Approvisionnement', 'Transport', 'Loyer', 'Electricité/Eau', 'Salaire', 'Autres'];
+const CAT_KEYS = ['supply', 'transport', 'rent', 'utility', 'salary', 'others'] as const;
 
 export default function ExpensesScreen() {
+  const { t } = useLangStore();
   const { expenses, addExpense } = useAppStore();
   const { store } = useAuthStore();
   const currency = store?.currency ?? 'CDF';
@@ -17,7 +19,7 @@ export default function ExpensesScreen() {
   const [showingAdd, setShowingAdd] = useState(false);
   const [amount, setAmount] = useState('');
   const [description, setDescription] = useState('');
-  const [category, setCategory] = useState(CATEGORIES[0]);
+  const [category, setCategory] = useState<typeof CAT_KEYS[number]>(CAT_KEYS[0]);
 
   const sortedExpenses = useMemo(() => {
     return [...expenses].sort((a, b) => new Date(b.spent_at).getTime() - new Date(a.spent_at).getTime());
@@ -30,11 +32,11 @@ export default function ExpensesScreen() {
   const handleAdd = () => {
     const numAmount = parseFloat(amount);
     if (isNaN(numAmount) || numAmount <= 0) {
-      Alert.alert('Erreur', 'Veuillez saisir un montant valide.');
+      Alert.alert(t('shared.error'), t('expenses.error_amount'));
       return;
     }
     if (!description.trim()) {
-      Alert.alert('Erreur', 'La description est requise.');
+      Alert.alert(t('shared.error'), t('expenses.error_desc'));
       return;
     }
 
@@ -51,19 +53,21 @@ export default function ExpensesScreen() {
     setShowingAdd(false);
     setAmount('');
     setDescription('');
-    setCategory(CATEGORIES[0]);
+    setCategory(CAT_KEYS[0]);
   };
 
   const renderItem = ({ item }: { item: Expense }) => (
     <View style={styles.card}>
       <View style={styles.cardLeft}>
         <Text style={styles.desc}>{item.description}</Text>
-        <Text style={styles.cat}>{item.category} • {new Date(item.spent_at).toLocaleDateString()}</Text>
+        <Text style={styles.cat}>
+          {t(`expenses.cats.${item.category}` as any)} • {new Date(item.spent_at).toLocaleDateString()}
+        </Text>
       </View>
       <View style={styles.cardRight}>
         <Text style={styles.amount}>-{parseFloat(String(item.amount)).toFixed(2)} {currency}</Text>
         <Text style={[styles.syncTag, item.is_synced && styles.syncDone]}>
-          {item.is_synced ? 'Synchronisé' : 'En attente'}
+          {item.is_synced ? t('expenses.synced') : t('expenses.pending')}
         </Text>
       </View>
     </View>
@@ -74,7 +78,7 @@ export default function ExpensesScreen() {
       {/* Header / Stats */}
       <View style={styles.header}>
         <View>
-          <Text style={styles.headerLabel}>Total Dépenses</Text>
+          <Text style={styles.headerLabel}>{t('expenses.total')}</Text>
           <Text style={styles.headerValue}>{totalExpenses.toFixed(2)} {currency}</Text>
         </View>
         <TouchableOpacity onPress={() => setShowingAdd(!showingAdd)} style={styles.addBtn}>
@@ -85,11 +89,11 @@ export default function ExpensesScreen() {
       {/* Add Form */}
       {showingAdd && (
         <View style={styles.addForm}>
-          <Text style={styles.formTitle}>Nouvelle Dépense</Text>
+          <Text style={styles.formTitle}>{t('expenses.add')}</Text>
           
           <TextInput
             style={styles.input}
-            placeholder="Montant *"
+            placeholder={t('expenses.amount') + " *"}
             placeholderTextColor="#888"
             value={amount}
             onChangeText={setAmount}
@@ -98,27 +102,29 @@ export default function ExpensesScreen() {
           
           <TextInput
             style={styles.input}
-            placeholder="Description *"
+            placeholder={t('expenses.reason') + " *"}
             placeholderTextColor="#888"
             value={description}
             onChangeText={setDescription}
           />
 
-          <Text style={styles.label}>Catégorie :</Text>
+          <Text style={styles.label}>{t('expenses.category')} :</Text>
           <View style={styles.catRow}>
-            {CATEGORIES.map(cat => (
+            {CAT_KEYS.map(cat => (
               <TouchableOpacity 
                 key={cat} 
                 style={[styles.catBtn, category === cat && styles.catBtnActive]}
                 onPress={() => setCategory(cat)}
               >
-                <Text style={[styles.catText, category === cat && styles.catTextActive]}>{cat}</Text>
+                <Text style={[styles.catText, category === cat && styles.catTextActive]}>
+                  {t(`expenses.cats.${cat}` as any)}
+                </Text>
               </TouchableOpacity>
             ))}
           </View>
 
           <TouchableOpacity style={styles.submitBtn} onPress={handleAdd}>
-            <Text style={styles.submitText}>Enregistrer la dépense</Text>
+            <Text style={styles.submitText}>{t('expenses.save_expense')}</Text>
           </TouchableOpacity>
         </View>
       )}
@@ -128,7 +134,7 @@ export default function ExpensesScreen() {
         data={sortedExpenses}
         keyExtractor={(e) => e.local_id}
         renderItem={renderItem}
-        ListEmptyComponent={<Text style={styles.empty}>Aucune dépense enregistrée.</Text>}
+        ListEmptyComponent={<Text style={styles.empty}>{t('expenses.empty')}</Text>}
         contentContainerStyle={{ padding: 12, paddingBottom: 30 }}
       />
     </SafeAreaView>
@@ -136,7 +142,10 @@ export default function ExpensesScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0d1117' },
+  container: {
+    flex: 1, backgroundColor: '#0d1117',
+    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
+  },
   header: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
     padding: 20, backgroundColor: '#161b22', borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.08)'

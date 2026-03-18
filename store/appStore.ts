@@ -75,7 +75,7 @@ export interface Expense {
 export interface DebtPayment {
   local_id: string;
   customer_uuid: string;
-  sale_uuid?: string; // Optional: link to a specific sale
+  sale_uuid?: string; 
   amount: number;
   payment_method: string;
   paid_at: string;

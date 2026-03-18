@@ -2,14 +2,18 @@ import React from 'react';
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppStore } from '../../store/appStore';
+import { useAuthStore } from '../../store/authStore';
 import { useLangStore } from '../../store/langStore';
 
 export default function TabLayout() {
-  const { t } = useLangStore();
+  const { t, lang } = useLangStore();
   const queueCount = useAppStore((s) => s.offlineQueue.filter((x) => !x.is_synced).length);
+  const user = useAuthStore((s) => s.user);
+  const isAdmin = user?.role === 'admin' || user?.role === 'proprietaire';
 
   return (
     <Tabs
+      key={lang}
       screenOptions={{
         tabBarActiveTintColor: '#10b981',
         tabBarInactiveTintColor: '#888',
@@ -52,6 +56,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="expenses"
         options={{
+          headerShown: false,
           title: t('tabs.expenses'),
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="wallet-outline" size={size} color={color} />
@@ -61,12 +66,70 @@ export default function TabLayout() {
       <Tabs.Screen
         name="stats"
         options={{
-          title: t('tabs.stats'),
+          title: isAdmin ? (t('tabs.admin_stats') || 'Tableau de Bord') : t('tabs.stats'),
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="stats-chart-outline" size={size} color={color} />
           ),
         }}
       />
+
+      {/* Admin tabs — always declared, hidden via href:null for non-admins */}
+      <Tabs.Screen
+        name="admin/purchases"
+        options={{
+          headerShown: false,
+          title: t('tabs.purchases'),
+          href: isAdmin ? undefined : null,
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="basket-outline" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="admin/suppliers"
+        options={{
+          headerShown: false,
+          title: t('tabs.suppliers'),
+          href: isAdmin ? undefined : null,
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="business-outline" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="admin/users"
+        options={{
+          headerShown: false,
+          title: t('tabs.users'),
+          href: isAdmin ? undefined : null,
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="people-circle-outline" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="admin/products"
+        options={{
+          headerShown: false,
+          title: t('tabs.products_admin'),
+          href: isAdmin ? undefined : null,
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="pricetags-outline" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="admin/inventory"
+        options={{
+          headerShown: false,
+          title: t('tabs.inventory'),
+          href: isAdmin ? undefined : null,
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="clipboard-outline" size={size} color={color} />
+          ),
+        }}
+      />
+
       <Tabs.Screen
         name="profile"
         options={{

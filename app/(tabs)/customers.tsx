@@ -6,8 +6,10 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useAppStore, Customer } from '../../store/appStore';
 import { useAuthStore } from '../../store/authStore';
+import { useLangStore } from '../../store/langStore';
 
 export default function CustomersScreen() {
+  const { t } = useLangStore();
   const { customers, addCustomer, addDebtPayment } = useAppStore();
   const { store } = useAuthStore();
   const currency = store?.currency ?? 'CDF';
@@ -31,7 +33,7 @@ export default function CustomersScreen() {
 
   const handleAdd = () => {
     if (!newName.trim()) {
-      Alert.alert('Erreur', 'Le nom du client est requis.');
+      Alert.alert(t('shared.error'), t('customers.error_name'));
       return;
     }
     const newCustomer: Customer = {
@@ -59,14 +61,14 @@ export default function CustomersScreen() {
   const handlePayment = () => {
     const amount = parseFloat(paymentAmount);
     if (isNaN(amount) || amount <= 0 || !selectedCustomer) {
-      Alert.alert('Erreur', 'Montant invalide.');
+      Alert.alert(t('shared.error'), t('customers.error_amount'));
       return;
     }
 
     if (amount > selectedCustomer.total_debt + 0.01) { // Add small epsilon for float precision
-        Alert.alert('Attention', 'Le montant dépasse la dette totale du client. Voulez-vous continuer ?', [
-            { text: 'Annuler', style: 'cancel' },
-            { text: 'Continuer', onPress: () => confirmPayment(amount) }
+        Alert.alert(t('shared.attention'), t('customers.alert_overpaid'), [
+            { text: t('shared.cancel'), style: 'cancel' },
+            { text: t('shared.confirm'), onPress: () => confirmPayment(amount) }
         ]);
     } else {
         confirmPayment(amount);
@@ -86,7 +88,7 @@ export default function CustomersScreen() {
     setSelectedCustomer(null);
     setPaymentAmount('');
     setSelectedSaleUuid(null);
-    Alert.alert('Succès', 'Paiement enregistré.');
+    Alert.alert(t('shared.success'), t('customers.success_payment'));
   };
 
   const renderItem = ({ item }: { item: Customer }) => (
@@ -96,7 +98,7 @@ export default function CustomersScreen() {
         {item.phone ? <Text style={styles.phone}>{item.phone}</Text> : null}
       </View>
       <View style={styles.cardRight}>
-        <Text style={styles.debtLabel}>Dette:</Text>
+        <Text style={styles.debtLabel}>{t('customers.debt')}:</Text>
         <Text style={[styles.debtAmount, item.total_debt <= 0 && styles.debtZero]}>
           {parseFloat(String(item.total_debt)).toFixed(2)} {currency}
         </Text>
@@ -105,7 +107,7 @@ export default function CustomersScreen() {
                 style={styles.payBtn}
                 onPress={() => setSelectedCustomer(item)}
             >
-                <Text style={styles.payBtnText}>Payer</Text>
+                <Text style={styles.payBtnText}>{t('customers.pay_debt').split(' ')[0]}</Text>
             </TouchableOpacity>
         )}
       </View>
@@ -119,7 +121,7 @@ export default function CustomersScreen() {
         <Ionicons name="search-outline" size={18} color="#888" style={{ marginRight: 8 }} />
         <TextInput
           style={styles.searchInput}
-          placeholder="Rechercher un client..."
+          placeholder={t('pos.search_placeholder')}
           placeholderTextColor="#666"
           value={search}
           onChangeText={setSearch}
@@ -131,33 +133,33 @@ export default function CustomersScreen() {
 
       {/* Stats */}
       <View style={styles.statsRow}>
-        <Text style={styles.statsText}>{filtered.length} client(s)</Text>
+        <Text style={styles.statsText}>{t('customers.count_clients', { count: filtered.length })}</Text>
         <Text style={styles.statsText}>
-          {customers.filter(c => c.total_debt > 0).length} débiteur(s)
+          {t('customers.count_debtors', { count: customers.filter(c => c.total_debt > 0).length })}
         </Text>
       </View>
 
       {/* Add new customer form */}
       {showingAdd && (
         <View style={styles.addForm}>
-          <Text style={styles.formTitle}>Nouveau Client</Text>
+          <Text style={styles.formTitle}>{t('customers.new_customer')}</Text>
           <TextInput
             style={styles.input}
-            placeholder="Nom complet *"
+            placeholder={t('customers.name') + " *"}
             placeholderTextColor="#888"
             value={newName}
             onChangeText={setNewName}
           />
           <TextInput
             style={styles.input}
-            placeholder="Numéro de téléphone"
+            placeholder={t('customers.phone')}
             placeholderTextColor="#888"
             value={newPhone}
             onChangeText={setNewPhone}
             keyboardType="phone-pad"
           />
           <TouchableOpacity style={styles.submitBtn} onPress={handleAdd}>
-            <Text style={styles.submitText}>Enregistrer</Text>
+            <Text style={styles.submitText}>{t('customers.save')}</Text>
           </TouchableOpacity>
         </View>
       )}
@@ -166,19 +168,19 @@ export default function CustomersScreen() {
       {selectedCustomer && (
           <View style={[styles.addForm, { position: 'absolute', top: 50, left: 12, right: 12, zIndex: 10, elevation: 5, shadowColor: '#000', shadowOffset: { width:0, height:4}, shadowOpacity: 0.5, shadowRadius: 10 }]}>
             <View style={{flexDirection:'row', justifyContent:'space-between', marginBottom: 10}}>
-                <Text style={styles.formTitle}>Paiement: {selectedCustomer.name}</Text>
+                <Text style={styles.formTitle}>{t('pos.payment')}: {selectedCustomer.name}</Text>
                 <TouchableOpacity onPress={() => { setSelectedCustomer(null); setSelectedSaleUuid(null); }}>
                     <Ionicons name="close" size={24} color="#888" />
                 </TouchableOpacity>
             </View>
             
             <Text style={{color: '#888', marginBottom: 12}}>
-                Dette totale: <Text style={{color:'#e74c3c', fontWeight:'bold'}}>{selectedCustomer.total_debt.toFixed(2)} {currency}</Text>
+                {t('customers.debt_total')}: <Text style={{color:'#e74c3c', fontWeight:'bold'}}>{selectedCustomer.total_debt.toFixed(2)} {currency}</Text>
             </Text>
 
             {customerSalesWithDebt.length > 0 && (
                 <View style={{maxHeight: 180, marginBottom: 15}}>
-                    <Text style={{color:'#fff', fontSize: 13, marginBottom: 8}}>Choisir une vente spécifique (Optionnel) :</Text>
+                    <Text style={{color:'#fff', fontSize: 13, marginBottom: 8}}>{t('customers.choose_sale')} :</Text>
                     <FlatList 
                         data={customerSalesWithDebt}
                         keyExtractor={s => s.local_id}
@@ -191,12 +193,12 @@ export default function CustomersScreen() {
                              onPress={() => setSelectedSaleUuid(selectedSaleUuid === item.local_id ? null : item.local_id)}
                            >
                                 <View style={{flex:1}}>
-                                    <Text style={{color:'#fff', fontSize:12}}>Vente du {new Date(item.sold_at).toLocaleDateString()}</Text>
+                                    <Text style={{color:'#fff', fontSize:12}}>{t('pos.date')} {new Date(item.sold_at).toLocaleDateString()}</Text>
                                     <Text style={{color:'#888', fontSize:10}}>{item.local_id.substring(0,8)}...</Text>
                                 </View>
                                 <View style={{alignItems:'flex-end'}}>
                                     <Text style={{color:'#e74c3c', fontSize:12, fontWeight:'bold'}}>{(item.final_amount - (item.amount_paid || 0)).toFixed(2)} {currency}</Text>
-                                    <Text style={{color:'#666', fontSize:10}}>Total: {item.final_amount} </Text>
+                                    <Text style={{color:'#666', fontSize:10}}>{t('pos.total')}: {item.final_amount} </Text>
                                 </View>
                            </TouchableOpacity>
                         )}
@@ -204,7 +206,7 @@ export default function CustomersScreen() {
                     />
                     {!selectedSaleUuid && (
                         <Text style={{color: '#aaa', fontSize: 10, fontStyle:'italic', marginTop: 4}}>
-                            * Aucun choix = Paiement réparti (plus anciennes en premier)
+                            {t('customers.payment_split_hint')}
                         </Text>
                     )}
                 </View>
@@ -212,7 +214,7 @@ export default function CustomersScreen() {
 
             <TextInput
                 style={styles.input}
-                placeholder="Montant à payer *"
+                placeholder={t('customers.amount_to_pay') + " *"}
                 placeholderTextColor="#888"
                 value={paymentAmount}
                 onChangeText={setPaymentAmount}
@@ -221,7 +223,7 @@ export default function CustomersScreen() {
             />
             <TouchableOpacity style={styles.paySubmitBtn} onPress={handlePayment}>
                 <Text style={styles.submitText}>
-                   {selectedSaleUuid ? 'Payer cette vente' : 'Enregistrer (Global)'}
+                   {selectedSaleUuid ? t('customers.pay_this_sale') : t('customers.save_global')}
                 </Text>
             </TouchableOpacity>
           </View>
@@ -232,7 +234,7 @@ export default function CustomersScreen() {
         data={filtered}
         keyExtractor={(c) => c.local_id || String(c.id)}
         renderItem={renderItem}
-        ListEmptyComponent={<Text style={styles.empty}>Aucun client trouvé.</Text>}
+        ListEmptyComponent={<Text style={styles.empty}>{t('pos.no_customer_found')}</Text>}
         contentContainerStyle={{ paddingBottom: 20 }}
       />
     </SafeAreaView>

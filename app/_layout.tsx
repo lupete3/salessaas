@@ -6,12 +6,14 @@ import { useEffect, useState } from 'react';
 
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useAuthStore } from '../store/authStore';
+import { useLangStore } from '../store/langStore';
 
 export const unstable_settings = {
   anchor: '(tabs)',
 };
 
 export default function RootLayout() {
+  const { t, lang } = useLangStore();
   const colorScheme = useColorScheme();
   const { isAuthenticated } = useAuthStore();
   const segments = useSegments();
@@ -38,7 +40,7 @@ export default function RootLayout() {
       <Stack>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="login"  options={{ headerShown: false }} />
-        <Stack.Screen name="modal"  options={{ presentation: 'modal', title: 'Détails' }} />
+        <Stack.Screen name="modal"  options={{ presentation: 'modal', title: t('shared.details') }} />
       </Stack>
       <StatusBar style="auto" />
     </ThemeProvider>

@@ -14,7 +14,7 @@ import NetInfo from '@react-native-community/netinfo';
 export default function ProfileScreen() {
   const router = useRouter();
   const { user, store, logout } = useAuthStore();
-  const { lang, setLang } = useLangStore();
+  const { t, lang, setLang } = useLangStore();
   const { offlineQueue, syncedSales, lastSyncAt } = useAppStore();
   const [syncing, setSyncing] = useState(false);
 
@@ -23,7 +23,7 @@ export default function ProfileScreen() {
   const handleSync = async () => {
     const netState = await NetInfo.fetch();
     if (!netState.isConnected) {
-      Alert.alert('Hors-ligne', 'Pas de connexion internet. Réessayez quand vous êtes connecté.');
+      Alert.alert(t('shared.offline'), t('shared.offline_msg'));
       return;
     }
     setSyncing(true);
@@ -35,22 +35,22 @@ export default function ProfileScreen() {
       await SyncService.pullData();
       
       if (success) {
-          Alert.alert('✅ Synchronisation terminée', 'Toutes les données sont à jour.');
+          Alert.alert('✅ ' + t('profile.sync_success_title'), t('profile.sync_success_msg'));
       } else {
-          Alert.alert('⚠️ Synchronisation partielle', error || 'Certaines requêtes ont échoué.');
+          Alert.alert('⚠️ ' + t('profile.sync_partial_title'), error || t('profile.sync_partial_msg'));
       }
     } catch (e) {
-      Alert.alert('Erreur', 'La synchronisation a échoué. Réessayez.');
+      Alert.alert(t('shared.error'), t('profile.sync_error'));
     } finally {
       setSyncing(false);
     }
   };
 
   const handleLogout = () => {
-    Alert.alert('Déconnexion', 'Êtes-vous sûr de vouloir vous déconnecter ?', [
-      { text: 'Annuler', style: 'cancel' },
+    Alert.alert(t('profile.logout_title'), t('profile.logout_confirm'), [
+      { text: t('shared.cancel'), style: 'cancel' },
       {
-        text: 'Déconnecter',
+        text: t('profile.logout_btn'),
         style: 'destructive',
         onPress: () => SyncService.logout(),
       },
@@ -58,7 +58,7 @@ export default function ProfileScreen() {
   };
 
   const formatDate = (iso: string | null) => {
-    if (!iso) return 'Jamais';
+    if (!iso) return t('shared.never');
     return new Date(iso).toLocaleString('fr-FR', {
       day: '2-digit', month: '2-digit', year: 'numeric',
       hour: '2-digit', minute: '2-digit',
@@ -79,33 +79,33 @@ export default function ProfileScreen() {
           <View>
             <Text style={styles.userName}>{user?.name ?? '—'}</Text>
             <Text style={styles.userEmail}>{user?.email ?? '—'}</Text>
-            <Text style={styles.userRole}>{user?.role ?? '—'}</Text>
+            <Text style={styles.userRole}>{t('admin.roles.' + (user?.role || '').toLowerCase())}</Text>
           </View>
         </View>
 
         {/* Store */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>🏪 Store</Text>
+          <Text style={styles.sectionTitle}>🏪 {t('profile.store')}</Text>
           <Text style={styles.sectionValue}>{store?.name ?? '—'}</Text>
-          <Text style={styles.sectionSub}>Devise : {store?.currency ?? 'CDF'}</Text>
+          <Text style={styles.sectionSub}>{t('profile.currency')} : {store?.currency ?? 'CDF'}</Text>
         </View>
 
         {/* Sync Status */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>🔄 Synchronisation</Text>
+          <Text style={styles.sectionTitle}>🔄 {t('profile.sync')}</Text>
           <View style={styles.syncStats}>
             <View style={styles.statBox}>
               <Text style={[styles.statNum, pendingCount > 0 && { color: '#f39c12' }]}>
                 {pendingCount}
               </Text>
-              <Text style={styles.statLabel}>En attente</Text>
+              <Text style={styles.statLabel}>{t('expenses.pending')}</Text>
             </View>
             <View style={styles.statBox}>
               <Text style={styles.statNum}>{syncedSales.length}</Text>
-              <Text style={styles.statLabel}>Synchronisées</Text>
+              <Text style={styles.statLabel}>{t('expenses.synced')}</Text>
             </View>
           </View>
-          <Text style={styles.lastSync}>Dernière sync : {formatDate(lastSyncAt)}</Text>
+          <Text style={styles.lastSync}>{t('profile.last_sync')} : {formatDate(lastSyncAt)}</Text>
 
           <TouchableOpacity
             style={[styles.syncBtn, syncing && styles.syncBtnDisabled]}
@@ -118,7 +118,7 @@ export default function ProfileScreen() {
               <>
                 <Ionicons name="cloud-upload-outline" size={20} color="#fff" />
                 <Text style={styles.syncBtnText}>
-                  Synchroniser{pendingCount > 0 ? ` (${pendingCount})` : ''}
+                  {t('profile.sync_btn')}{pendingCount > 0 ? ` (${pendingCount})` : ''}
                 </Text>
               </>
             )}
@@ -127,7 +127,7 @@ export default function ProfileScreen() {
 
         {/* Recent Sales / History */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>🧾 Historique des ventes</Text>
+          <Text style={styles.sectionTitle}>🧾 {t('profile.sales_history')}</Text>
           {[...offlineQueue, ...syncedSales].slice(-10).reverse().map((s) => {
             const mins = (Date.now() - new Date(s.sold_at).getTime()) / (1000 * 60);
             const canCancel = mins < 20;
@@ -136,7 +136,17 @@ export default function ProfileScreen() {
               <View key={s.local_id} style={styles.saleRow}>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.saleDate}>{new Date(s.sold_at).toLocaleString('fr-FR')}</Text>
-                  <Text style={styles.saleItems}>{s.items.length} art. · {s.payment_method}</Text>
+                  <Text style={styles.saleDetailsText}>
+                    <Text style={{ fontWeight: 'bold' }}>{t('pos.ref')} :</Text> {s.local_id}
+                  </Text>
+                  <Text style={styles.saleDetailsText}>
+                    <Text style={{ fontWeight: 'bold' }}>{t('pos.payment_method')} :</Text> {t('pos.pay_methods.' + (s.payment_method || 'cash').toLowerCase())}
+                  </Text>
+                  {s.customer_name && (
+                    <Text style={styles.saleDetailsText}>
+                      <Text style={{ fontWeight: 'bold' }}>{t('pos.customer')} :</Text> {s.customer_name}
+                    </Text>
+                  )}
                 </View>
                 <View style={{ alignItems: 'flex-end' }}>
                   <Text style={styles.saleAmount}>{s.total_amount.toFixed(2)} {store?.currency || 'CDF'}</Text>
@@ -144,20 +154,20 @@ export default function ProfileScreen() {
                     {canCancel && (
                       <TouchableOpacity 
                          onPress={() => {
-                          Alert.alert('Annulation', 'Voulez-vous annuler cette vente ?', [
-                            { text: 'Non' },
-                            { text: 'Annuler la vente', style: 'destructive', onPress: () => {
-                                const res = useAppStore.getState().cancelSale(s.local_id);
-                                Alert.alert(res.success ? 'Succès' : 'Erreur', res.message);
+                          Alert.alert(t('profile.cancel_title'), t('profile.cancel_confirm'), [
+                            { text: t('shared.no') },
+                            { text: t('profile.cancel_btn'), style: 'destructive', onPress: () => {
+                                const res = (useAppStore.getState() as any).cancelSale(s.local_id);
+                                Alert.alert(res.success ? t('shared.success') : t('shared.error'), res.message);
                             }}
                           ]);
                         }}
                       >
-                        <Text style={{ color: '#e74c3c', fontSize: 11, fontWeight: 'bold' }}>ANNULER</Text>
+                        <Text style={{ color: '#e74c3c', fontSize: 11, fontWeight: 'bold' }}>{t('shared.cancel').toUpperCase()}</Text>
                       </TouchableOpacity>
                     )}
                     <Text style={[styles.saleSyncTag, s.is_synced && styles.saleSyncDone]}>
-                      {s.is_synced ? 'Synced' : 'Local'}
+                      {s.is_synced ? t('shared.synced') : t('shared.local')}
                     </Text>
                   </View>
                 </View>
@@ -165,15 +175,15 @@ export default function ProfileScreen() {
             );
           })}
           {offlineQueue.length === 0 && syncedSales.length === 0 && (
-            <Text style={styles.empty}>Aucune vente enregistrée.</Text>
+            <Text style={styles.empty}>{t('stats.no_sales_found')}</Text>
           )}
         </View>
 
         {/* Settings Section */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>PARAMÈTRES</Text>
+          <Text style={styles.sectionTitle}>{t('profile.settings')}</Text>
           <View style={styles.langRow}>
-            <Text style={styles.langLabel}>Langue / Language</Text>
+            <Text style={styles.langLabel}>{t('profile.language')}</Text>
             <View style={styles.langButtons}>
               <TouchableOpacity 
                 style={[styles.langBtn, lang === 'fr' && styles.langBtnActive]} 
@@ -193,13 +203,13 @@ export default function ProfileScreen() {
 
         <TouchableOpacity style={styles.statsBtn} onPress={() => router.push('/(tabs)/stats')}>
           <Ionicons name="stats-chart" size={20} color="#fff" />
-          <Text style={styles.statsBtnText}>Consulter les Statistiques</Text>
+          <Text style={styles.statsBtnText}>{t('profile.view_stats')}</Text>
         </TouchableOpacity>
 
         {/* Logout */}
         <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
           <Ionicons name="log-out-outline" size={20} color="#e74c3c" />
-          <Text style={styles.logoutText}>Se déconnecter</Text>
+          <Text style={styles.logoutText}>{t('profile.logout_btn')}</Text>
         </TouchableOpacity>
 
       </ScrollView>
@@ -245,8 +255,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row', justifyContent: 'space-between',
     borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.06)', paddingTop: 8, marginTop: 8,
   },
-  saleDate: { color: '#ddd', fontSize: 12 },
-  saleItems: { color: '#888', fontSize: 11 },
+  saleDate: { color: '#888', fontSize: 12, marginBottom: 2 },
+  saleDetailsText: { color: '#bbb', fontSize: 11, marginTop: 1 },
+  saleItems: { color: '#555', fontSize: 11 },
   saleAmount: { color: '#10b981', fontWeight: 'bold', textAlign: 'right' },
   saleSyncTag: { color: '#f39c12', fontSize: 11, textAlign: 'right' },
   saleSyncDone: { color: '#2ecc71' },
