@@ -21,7 +21,6 @@ export default function POSScreen() {
   const { t, lang } = useLangStore();
   const { products, cart, addToCart, removeFromCart, updateCartQty, clearCart, cartTotal, queueSale, customers } = useAppStore();
   const { store } = useAuthStore();
-  const currency = store?.currency ?? 'CDF';
   const [search, setSearch] = useState('');
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('cash');
   const [discount, setDiscount] = useState('0');
